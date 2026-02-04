@@ -1,8 +1,8 @@
-package com.example.dynamicstructure;
+package com.example.structuredtemplates;
 
-import com.example.dynamicstructure.model.StructureTemplate;
-import com.example.dynamicstructure.settings.TemplateSettings;
-import com.example.dynamicstructure.generator.StructureTemplateGenerator;
+import com.example.structuredtemplates.model.StructureTemplate;
+import com.example.structuredtemplates.settings.TemplateSettings;
+import com.example.structuredtemplates.generator.StructureTemplateGenerator;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;

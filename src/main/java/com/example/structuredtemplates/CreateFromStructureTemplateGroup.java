@@ -1,7 +1,7 @@
-package com.example.dynamicstructure;
+package com.example.structuredtemplates;
 
-import com.example.dynamicstructure.model.StructureTemplate;
-import com.example.dynamicstructure.settings.TemplateSettings;
+import com.example.structuredtemplates.model.StructureTemplate;
+import com.example.structuredtemplates.settings.TemplateSettings;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import org.jetbrains.annotations.NotNull;

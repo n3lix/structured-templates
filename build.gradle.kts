@@ -4,7 +4,7 @@ plugins {
     id("org.jetbrains.intellij") version "1.16.1"
 }
 
-group = "com.example"
+group = "com.example.structuredtemplates"
 version = "1.0-SNAPSHOT"
 
 repositories {

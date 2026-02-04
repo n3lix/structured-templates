@@ -1,4 +1,4 @@
-package com.example.dynamicstructure.model;
+package com.example.structuredtemplates.model;
 
 public enum StructureEntryType {
     FOLDER,

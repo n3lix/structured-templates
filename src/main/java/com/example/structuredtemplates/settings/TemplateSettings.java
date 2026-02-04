@@ -1,8 +1,8 @@
-package com.example.dynamicstructure.settings;
+package com.example.structuredtemplates.settings;
 
-import com.example.dynamicstructure.model.StructureEntry;
-import com.example.dynamicstructure.model.StructureEntryType;
-import com.example.dynamicstructure.model.StructureTemplate;
+import com.example.structuredtemplates.model.StructureEntry;
+import com.example.structuredtemplates.model.StructureEntryType;
+import com.example.structuredtemplates.model.StructureTemplate;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.State;
@@ -19,8 +19,8 @@ import java.util.List;
  * Project-level storage for structure templates.
  */
 @State(
-        name = "DynamicStructureTemplateSettings",
-        storages = @Storage("dynamic-structure-templates.xml")
+        name = "StructuredTemplatesSettings",
+        storages = @Storage("structured-templates.xml")
 //        storages = @Storage(StoragePathMacros.NON_ROAMABLE_FILE)
 )
 @Service(Service.Level.PROJECT)

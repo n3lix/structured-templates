@@ -1,8 +1,8 @@
-package com.example.dynamicstructure.generator;
+package com.example.structuredtemplates.generator;
 
-import com.example.dynamicstructure.model.StructureEntry;
-import com.example.dynamicstructure.model.StructureEntryType;
-import com.example.dynamicstructure.model.StructureTemplate;
+import com.example.structuredtemplates.model.StructureEntry;
+import com.example.structuredtemplates.model.StructureEntryType;
+import com.example.structuredtemplates.model.StructureTemplate;
 import com.intellij.ide.fileTemplates.FileTemplate;
 import com.intellij.ide.fileTemplates.FileTemplateManager;
 import com.intellij.openapi.command.WriteCommandAction;

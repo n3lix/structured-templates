@@ -1,9 +1,9 @@
-package com.example.dynamicstructure.ui;
+package com.example.structuredtemplates.ui;
 
-import com.example.dynamicstructure.model.StructureEntry;
-import com.example.dynamicstructure.model.StructureEntryType;
-import com.example.dynamicstructure.model.StructureTemplate;
-import com.example.dynamicstructure.settings.TemplateSettings;
+import com.example.structuredtemplates.model.StructureEntry;
+import com.example.structuredtemplates.model.StructureEntryType;
+import com.example.structuredtemplates.model.StructureTemplate;
+import com.example.structuredtemplates.settings.TemplateSettings;
 import com.intellij.ide.fileTemplates.FileTemplate;
 import com.intellij.ide.fileTemplates.FileTemplateManager;
 import com.intellij.openapi.options.SearchableConfigurable;
@@ -61,7 +61,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
     @Override
     public @NotNull String getId() {
-        return "com.example.dynamicstructure.StructureTemplatesConfigurable";
+        return "com.example.structuredtemplates.StructureTemplatesConfigurable";
     }
 
     @Override

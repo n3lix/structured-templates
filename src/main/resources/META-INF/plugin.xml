@@ -1,11 +1,11 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
-    <id>com.example.dynamicstructure</id>
+    <id>com.example.structuredtemplates</id>
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <name>Dynamicstructure</name>
+    <name>Structured Templates</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor email="support@yourcompany.com" url="https://www.yourcompany.com">YourCompany</vendor>
@@ -23,15 +23,15 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
         <!-- Project-level settings page -->
-        <projectConfigurable instance="com.example.dynamicstructure.ui.StructureTemplatesConfigurable"
-                             id="com.example.dynamicstructure.StructureTemplatesConfigurable"
+        <projectConfigurable instance="com.example.structuredtemplates.ui.StructureTemplatesConfigurable"
+                             id="com.example.structuredtemplates.StructureTemplatesConfigurable"
                              displayName="Structure Templates"/>
     </extensions>
 
     <actions>
         <action
-                id="com.example.dynamicstructure.CreateFromStructureTemplateGroup"
-                class="com.example.dynamicstructure.CreateFromStructureTemplateGroup"
+                id="com.example.structuredtemplates.CreateFromStructureTemplateGroup"
+                class="com.example.structuredtemplates.CreateFromStructureTemplateGroup"
                 text="Create From Structure Template"
                 description="Generate folders/files from a structure template">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="NewFile"/>
