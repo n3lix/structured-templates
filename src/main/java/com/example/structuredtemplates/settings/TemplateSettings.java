@@ -32,6 +32,7 @@ public final class TemplateSettings implements PersistentStateComponent<Template
 
     public static class TemplateState {
         public String name;
+        public String iconPath;
         public List<EntryState> entries = new ArrayList<>();
     }
 
@@ -73,6 +74,7 @@ public final class TemplateSettings implements PersistentStateComponent<Template
         }
         if (state.templates.isEmpty()) {
             TemplateState componentTemplate = new TemplateState();
+            componentTemplate.iconPath = "AllIcons.Nodes.ModuleGroup";
             componentTemplate.name = "Component";
 
             EntryState jsFile = new EntryState();
@@ -98,7 +100,7 @@ public final class TemplateSettings implements PersistentStateComponent<Template
             return result;
         }
         for (TemplateState ts : state.templates) {
-            StructureTemplate template = new StructureTemplate(ts.name);
+            StructureTemplate template = new StructureTemplate(ts.name, ts.iconPath);
             for (EntryState es : ts.entries) {
                 template.addEntry(fromEntryState(es));
             }
@@ -112,6 +114,7 @@ public final class TemplateSettings implements PersistentStateComponent<Template
         for (StructureTemplate template : templates) {
             TemplateState ts = new TemplateState();
             ts.name = template.getName();
+            ts.iconPath = template.getIconPath();
             for (StructureEntry entry : template.getEntries()) {
                 ts.entries.add(toEntryState(entry));
             }

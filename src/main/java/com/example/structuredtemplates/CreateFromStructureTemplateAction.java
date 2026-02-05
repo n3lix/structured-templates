@@ -9,13 +9,17 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
+
 public class CreateFromStructureTemplateAction extends AnAction {
 
     private final String templateName;
+    private final Icon icon;
 
-    public CreateFromStructureTemplateAction(String templateName) {
-        super(templateName);
+    public CreateFromStructureTemplateAction(String templateName, Icon icon) {
+        super(templateName, null, icon);
         this.templateName = templateName;
+        this.icon = icon;
     }
 
     @Override
