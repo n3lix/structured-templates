@@ -15,10 +15,6 @@
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description>
         A plugin for defining reusable hierarchical structure templates composed of folders and files, powered by IntelliJ File Templates.
-        It also exposes two custom variables for use inside File Templates:
-            * $FILE_NAME_CAMEL – the user‑provided name converted to camelCase
-            * $FILE_NAME_PASCAL – the user‑provided name converted to PascalCase
-        These variables make it easy to generate consistent, convention‑based file structures with minimal effort.
     </description>
 
     <!-- Product and plugin compatibility requirements.

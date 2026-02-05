@@ -84,16 +84,16 @@ public class StructureTemplateGenerator {
 
         String result = raw;
 
-        if (result.contains("$FILE_NAME_PASCAL")) {
-            result = result.replace("$FILE_NAME_PASCAL", toPascalCase(rootName));
+        if (result.contains("${FILE_NAME_PASCAL}")) {
+            result = result.replace("${FILE_NAME_PASCAL}", toPascalCase(rootName));
         }
 
-        if (result.contains("$FILE_NAME_CAMEL")) {
-            result = result.replace("$FILE_NAME_CAMEL", toCamelCase(rootName));
+        if (result.contains("${FILE_NAME_CAMEL}")) {
+            result = result.replace("${FILE_NAME_CAMEL}", toCamelCase(rootName));
         }
 
-        if (result.contains("$FILE_NAME")) {
-            result = result.replace("$FILE_NAME", rootName);
+        if (result.contains("${FILE_NAME}")) {
+            result = result.replace("${FILE_NAME}", rootName);
         }
 
         return result;
