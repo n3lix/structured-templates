@@ -34,29 +34,3 @@ This plugin is ideal for teams and developers who frequently create similar comp
 
 - **Project‑level storage**  
   Templates are stored per project, making it easy to maintain different setups across codebases.
-
----
-
-## Getting Started
-
-### 1. Open the Template Manager
-Go to **File → Settings → Tools → Structure Templates**  
-(or **Preferences** on macOS).
-
-### 2. Create a Structure Template
-Add folders and files, choose File Templates for file entries, and build any hierarchy you need.
-
-### 3. Use Custom Variables
-Inside IntelliJ File Templates, you can use:
-- `$FILE_NAME_CAMEL`
-- `$FILE_NAME_PASCAL`
-
-These expand based on the name you enter when generating the structure.
-
-### 4. Generate a Structure
-Right‑click a folder in the Project tool window →  
-**New → Create From Structure Template** → choose a template → enter a name.
-
-### 5. Import/Export Templates
-Use the import/export options to share templates with your team.  
-Exports include both structure templates and the File Templates they depend on.
