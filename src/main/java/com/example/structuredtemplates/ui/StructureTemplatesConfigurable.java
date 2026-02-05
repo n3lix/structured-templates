@@ -11,15 +11,10 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import com.intellij.openapi.util.JDOMUtil;
 import com.intellij.util.xmlb.XmlSerializer;
-import org.jdom.Document;
-import org.jdom.input.SAXBuilder;
 import org.jdom.Element;
-import org.jdom.Document;
 import org.jdom.CDATA;
-import org.jdom.input.SAXBuilder;
-import org.jdom.output.XMLOutputter;
-import org.jdom.output.Format;
 
 
 import javax.swing.*;
@@ -458,9 +453,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         }
 
         try {
-            SAXBuilder builder = new SAXBuilder();
-            Document doc = builder.build(file);
-            Element root = doc.getRootElement();
+            Element root = JDOMUtil.load(file);
 
             // -----------------------------
             // IMPORT FILE TEMPLATES
@@ -568,9 +561,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             root.addContent(structureEl);
 
             // Write to disk
-            Document doc = new Document(root);
-            XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
-            String xml = outputter.outputString(doc);
+            String xml = JDOMUtil.writeElement(root);
 
             Files.write(file.toPath(), xml.getBytes(StandardCharsets.UTF_8));
 
