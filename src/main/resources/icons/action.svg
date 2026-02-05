@@ -1,0 +1,50 @@
+<svg width="16" height="16" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <!-- Inner content area -->
+    <g transform="translate(2,2)"
+       stroke="#2F2F2F"
+       stroke-width="1"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       fill="none">
+
+        <!-- Root folder -->
+        <path d="M10 4 H18 L20 6 H26 V14 H10 Z"
+              fill="#FFE08A"/>
+
+        <!-- Folder text lines -->
+        <line x1="12" y1="9" x2="24" y2="9" stroke="#7A6A2A"/>
+        <line x1="12" y1="10.5" x2="22" y2="10.5" stroke="#7A6A2A"/>
+        <line x1="12" y1="12" x2="20" y2="12" stroke="#7A6A2A"/>
+
+        <!-- Connectors -->
+        <line x1="18" y1="14" x2="18" y2="20" stroke="#000"/>
+        <line x1="6" y1="20" x2="32" y2="20" stroke="#000"/>
+
+        <!-- File 1 -->
+        <line x1="7" y1="20" x2="7" y2="22" stroke="#000"/>
+        <path d="M4 22 V30 H10 V25 L8 22 Z"
+              fill="#EAF2FF"/>
+        <path d="M10 25 H8 V22"/>
+        <line x1="5.5" y1="25" x2="6.5" y2="25"/>
+        <line x1="5.5" y1="26.5" x2="8.5" y2="26.5"/>
+        <line x1="5.5" y1="28" x2="8" y2="28"/>
+
+        <!-- File 2 -->
+        <line x1="18" y1="20" x2="18" y2="22" stroke="#000"/>
+        <path d="M16 22 V30 H22 V25 L20 22 Z"
+              fill="#EAF2FF"/>
+        <path d="M22 25 H20 V22"/>
+        <line x1="17.5" y1="25" x2="18.5" y2="25"/>
+        <line x1="17.5" y1="26.5" x2="20.5" y2="26.5"/>
+        <line x1="17.5" y1="28" x2="20" y2="28"/>
+
+        <!-- File 3 -->
+        <line x1="31" y1="20" x2="31" y2="22" stroke="#000"/>
+        <path d="M28 22 V30 H34 V25 L32 22 Z"
+              fill="#EAF2FF"/>
+        <path d="M34 25 H32 V22"/>
+        <line x1="29.5" y1="25" x2="30.5" y2="25"/>
+        <line x1="29.5" y1="26.5" x2="32.5" y2="26.5"/>
+        <line x1="29.5" y1="28" x2="32" y2="28"/>
+    </g>
+</svg>

@@ -4,6 +4,9 @@ import com.example.structuredtemplates.model.StructureEntry;
 import com.example.structuredtemplates.model.StructureEntryType;
 import com.example.structuredtemplates.model.StructureTemplate;
 import com.example.structuredtemplates.settings.TemplateSettings;
+import com.example.structuredtemplates.ui.TemplateTreeCellRenderer;
+import com.example.structuredtemplates.util.IconUtils;
+import com.example.structuredtemplates.util.TemplateImportExportManager;
 import com.intellij.ide.fileTemplates.FileTemplate;
 import com.intellij.ide.fileTemplates.FileTemplateManager;
 import com.intellij.openapi.options.SearchableConfigurable;
@@ -11,20 +14,11 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.intellij.openapi.util.JDOMUtil;
-import com.intellij.util.xmlb.XmlSerializer;
-import org.jdom.Element;
-import org.jdom.CDATA;
-
 
 import com.intellij.icons.AllIcons;
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.DialogBuilder;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
-import com.intellij.util.IconUtil;
-import com.intellij.util.ui.JBUI;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -32,14 +26,8 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.io.File;
-import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
@@ -194,36 +182,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             }
         }
         treeModel.reload();
-
-        tree.setCellRenderer(new javax.swing.tree.DefaultTreeCellRenderer() {
-            @Override
-            public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-                super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
-                if (value instanceof DefaultMutableTreeNode) {
-                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
-                    Object userObject = node.getUserObject();
-                    if (node.isRoot()) {
-                        setIcon(AllIcons.Nodes.ConfigFolder);
-                    } else if (userObject instanceof StructureTemplate) {
-                        StructureTemplate st = (StructureTemplate) userObject;
-                        Icon icon = getIconByPath(st.getIconPath());
-                        if (icon != null) {
-                            setIcon(icon);
-                        } else {
-                            setIcon(AllIcons.Nodes.ModuleGroup);
-                        }
-                    } else if (userObject instanceof StructureEntry) {
-                        StructureEntry se = (StructureEntry) userObject;
-                        if (se.getType() == StructureEntryType.FOLDER) {
-                            setIcon(AllIcons.Nodes.Folder);
-                        } else {
-                            setIcon(AllIcons.FileTypes.Text);
-                        }
-                    }
-                }
-                return this;
-            }
-        });
+        tree.setCellRenderer(new TemplateTreeCellRenderer());
     }
 
     private DefaultMutableTreeNode buildNode(StructureEntry entry) {
@@ -260,29 +219,12 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     }
 
     private String chooseIcon() {
-        List<String> iconNames = new ArrayList<>();
-        // Using reflection to get some icons from AllIcons.Nodes as examples
-        try {
-            for (Field field : AllIcons.Nodes.class.getDeclaredFields()) {
-                if (field.getType().equals(javax.swing.Icon.class)) {
-                    iconNames.add("AllIcons.Nodes." + field.getName());
-                }
-            }
-        } catch (Exception e) {
-            // fallback or ignore
-        }
-
-        if (iconNames.isEmpty()) {
-            iconNames.add("AllIcons.Nodes.Folder");
-            iconNames.add("AllIcons.Nodes.Package");
-            iconNames.add("AllIcons.Nodes.Class");
-            iconNames.add("AllIcons.Nodes.Function");
-        }
+        List<String> iconNames = IconUtils.getAllIconsNodesPaths();
 
         JBList<String> list = new JBList<>(iconNames);
         list.setCellRenderer((list1, value, index, isSelected, cellHasFocus) -> {
             JBLabel label = new JBLabel(value);
-            Icon icon = getIconByPath(value);
+            Icon icon = IconUtils.getIconByPath(value);
             if (icon != null) {
                 label.setIcon(icon);
             }
@@ -299,28 +241,6 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         builder.setCenterPanel(new JScrollPane(list));
         if (builder.showAndGet()) {
             return list.getSelectedValue();
-        }
-        return null;
-    }
-
-    private Icon getIconByPath(String path) {
-        if (path == null || path.isEmpty()) return null;
-        if (path.startsWith("AllIcons.")) {
-            String[] parts = path.split("\\.");
-            if (parts.length == 3) {
-                try {
-                    Class<?> clazz = null;
-                    if (parts[1].equals("Nodes")) clazz = AllIcons.Nodes.class;
-                    else if (parts[1].equals("Actions")) clazz = AllIcons.Actions.class;
-                    
-                    if (clazz != null) {
-                        Field field = clazz.getDeclaredField(parts[2]);
-                        return (Icon) field.get(null);
-                    }
-                } catch (Exception e) {
-                    return null;
-                }
-            }
         }
         return null;
     }
@@ -582,48 +502,11 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         }
 
         try {
-            Element root = JDOMUtil.load(file);
-
-            // -----------------------------
-            // IMPORT FILE TEMPLATES
-            // -----------------------------
-            Element fileTemplatesEl = root.getChild("fileTemplates");
-            if (fileTemplatesEl != null) {
-                FileTemplateManager ftm = FileTemplateManager.getInstance(project);
-
-                for (Element tEl : fileTemplatesEl.getChildren("template")) {
-                    String name = tEl.getAttributeValue("name");
-                    String ext = tEl.getAttributeValue("extension");
-                    String content = tEl.getText();
-
-                    FileTemplate existing = ftm.getTemplate(name);
-                    if (existing == null) {
-                        FileTemplate newTemplate = ftm.addTemplate(name, ext);
-                        newTemplate.setText(content);
-                    } else {
-                        existing.setText(content); // overwrite
-                    }
-                }
-            }
-
-            // -----------------------------
-            // IMPORT STRUCTURE TEMPLATES
-            // -----------------------------
-            Element structureEl = root.getChild("structureTemplates");
-            if (structureEl != null) {
-                TemplateSettings.State importedState =
-                        XmlSerializer.deserialize(structureEl, TemplateSettings.State.class);
-
-                TemplateSettings settings = TemplateSettings.getInstance(project);
-                settings.loadState(importedState);
-            }
-
+            new TemplateImportExportManager(project).importFromFile(file);
             // Refresh UI
             initData();
             treeModel.reload();
-
             JOptionPane.showMessageDialog(mainPanel, "Template pack imported successfully.");
-
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(mainPanel, "Failed to import: " + ex.getMessage());
@@ -654,87 +537,14 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         }
 
         try {
-            TemplateSettings settings = TemplateSettings.getInstance(project);
-            TemplateSettings.State state = settings.getState();
-
-            Element root = new Element("templatePack");
-
-            // -----------------------------
-            // EXPORT ONLY USED FILE TEMPLATES
-            // -----------------------------
-            Set<String> usedNames = collectUsedFileTemplateNames(state);
-
-            FileTemplateManager ftm = FileTemplateManager.getInstance(project);
-            FileTemplate[] all = ftm.getAllTemplates();
-
-            Element fileTemplatesEl = new Element("fileTemplates");
-
-            for (FileTemplate t : all) {
-                if (!usedNames.contains(t.getName())) continue;
-
-                Element tEl = new Element("template");
-                tEl.setAttribute("name", t.getName());
-                tEl.setAttribute("extension", t.getExtension() == null ? "" : t.getExtension());
-                tEl.addContent(new CDATA(t.getText()));
-
-                fileTemplatesEl.addContent(tEl);
-            }
-
-            root.addContent(fileTemplatesEl);
-
-            // -----------------------------
-            // EXPORT STRUCTURE TEMPLATES
-            // -----------------------------
-            Element structureEl = XmlSerializer.serialize(state);
-            structureEl.setName("structureTemplates");
-            root.addContent(structureEl);
-
-            // Write to disk
-            String xml = JDOMUtil.writeElement(root);
-
-            Files.write(file.toPath(), xml.getBytes(StandardCharsets.UTF_8));
-
+            new TemplateImportExportManager(project).exportToFile(file);
             JOptionPane.showMessageDialog(mainPanel, "Template pack exported successfully.");
-
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(mainPanel, "Failed to export: " + ex.getMessage());
         }
     }
 
-    private Set<String> collectUsedFileTemplateNames(TemplateSettings.State state) {
-        Set<String> names = new HashSet<>();
-
-        if (state == null || state.templates == null) {
-            return names;
-        }
-
-        for (TemplateSettings.TemplateState template : state.templates) {
-            for (TemplateSettings.EntryState entry : template.entries) {
-                collectFromEntry(entry, names);
-            }
-        }
-
-        return names;
-    }
-
-    private void collectFromEntry(TemplateSettings.EntryState entry, Set<String> names) {
-        if (entry == null) return;
-
-        // Only FILE entries have fileTemplateName
-        if (StructureEntryType.FILE.name().equals(entry.type)) {
-            if (entry.fileTemplateName != null && !entry.fileTemplateName.isEmpty()) {
-                names.add(entry.fileTemplateName);
-            }
-        }
-
-        // Recurse into children
-        if (entry.children != null) {
-            for (TemplateSettings.EntryState child : entry.children) {
-                collectFromEntry(child, names);
-            }
-        }
-    }
 
 
 }
