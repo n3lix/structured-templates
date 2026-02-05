@@ -200,8 +200,11 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
                 super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
                 if (value instanceof DefaultMutableTreeNode) {
-                    Object userObject = ((DefaultMutableTreeNode) value).getUserObject();
-                    if (userObject instanceof StructureTemplate) {
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
+                    Object userObject = node.getUserObject();
+                    if (node.isRoot()) {
+                        setIcon(AllIcons.Nodes.ConfigFolder);
+                    } else if (userObject instanceof StructureTemplate) {
                         StructureTemplate st = (StructureTemplate) userObject;
                         Icon icon = getIconByPath(st.getIconPath());
                         if (icon != null) {
