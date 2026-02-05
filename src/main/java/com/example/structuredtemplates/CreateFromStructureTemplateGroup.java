@@ -14,7 +14,7 @@ import java.util.List;
 public class CreateFromStructureTemplateGroup extends DefaultActionGroup {
 
     public CreateFromStructureTemplateGroup() {
-        super("Create From Structure Template", true); // popup = true
+        super("Create From Structured Template", true); // popup = true
     }
 
     @Override

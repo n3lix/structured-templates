@@ -4,7 +4,6 @@ import com.example.structuredtemplates.model.StructureEntry;
 import com.example.structuredtemplates.model.StructureEntryType;
 import com.example.structuredtemplates.model.StructureTemplate;
 import com.example.structuredtemplates.settings.TemplateSettings;
-import com.example.structuredtemplates.ui.TemplateTreeCellRenderer;
 import com.example.structuredtemplates.util.IconUtils;
 import com.example.structuredtemplates.util.TemplateImportExportManager;
 import com.intellij.ide.fileTemplates.FileTemplate;
@@ -15,10 +14,11 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.intellij.icons.AllIcons;
 import com.intellij.openapi.ui.DialogBuilder;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
+import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.treeStructure.Tree;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -34,7 +34,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     private final Project project;
 
     private JPanel mainPanel;
-    private JTree tree;
+    private Tree tree;
     private DefaultTreeModel treeModel;
     private DefaultMutableTreeNode rootNode;
 
@@ -59,7 +59,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
     @Override
     public @Nls(capitalization = Nls.Capitalization.Title) String getDisplayName() {
-        return "Structure Templates";
+        return "Structured Templates";
     }
 
     @Override
@@ -68,8 +68,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         rootNode = new DefaultMutableTreeNode("Templates");
         treeModel = new DefaultTreeModel(rootNode);
-
-        tree = new JTree(treeModel);
+        tree = new Tree(treeModel);
         installContextMenu();
         tree.setRootVisible(true);
         tree.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -81,7 +80,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             }
         });
 
-        JScrollPane scrollPane = new JScrollPane(tree);
+        JBScrollPane scrollPane = new JBScrollPane(tree);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel();
@@ -238,7 +237,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         DialogBuilder builder = new DialogBuilder(mainPanel);
         builder.setTitle("Choose Icon");
-        builder.setCenterPanel(new JScrollPane(list));
+        builder.setCenterPanel(new JBScrollPane(list));
         if (builder.showAndGet()) {
             return list.getSelectedValue();
         }
