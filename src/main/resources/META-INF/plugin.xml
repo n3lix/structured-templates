@@ -21,7 +21,6 @@
         These variables make it easy to generate consistent, convention‑based file structures with minimal effort.
     </description>
 
-
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
@@ -36,11 +35,11 @@
     </extensions>
 
     <actions>
-        <action
-                id="com.example.structuredtemplates.CreateFromStructureTemplateGroup"
+        <action id="com.example.structuredtemplates.CreateFromStructureTemplateGroup"
                 class="com.example.structuredtemplates.CreateFromStructureTemplateGroup"
-                text="Create From Structure Template"
-                description="Generate folders/files from a structure template">
+                text="Create From Structured Template"
+                description="Generate folders/files from a structure template"
+                icon="icons/action.svg">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="NewFile"/>
         </action>
     </actions>
