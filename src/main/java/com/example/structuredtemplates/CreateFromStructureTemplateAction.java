@@ -47,8 +47,8 @@ public class CreateFromStructureTemplateAction extends AnAction {
 
         String name = Messages.showInputDialog(
                 project,
-                "Enter name for the new component:",
-                "Component Name",
+                "Enter name for the new " + templateName + ":",
+                templateName + " Name",
                 Messages.getQuestionIcon()
         );
 
