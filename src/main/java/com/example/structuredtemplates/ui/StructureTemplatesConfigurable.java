@@ -18,7 +18,9 @@ import com.intellij.openapi.ui.DialogBuilder;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.treeStructure.Tree;
+import com.intellij.util.ui.tree.TreeUtil;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -69,8 +71,12 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         rootNode = new DefaultMutableTreeNode("Templates");
         treeModel = new DefaultTreeModel(rootNode);
         tree = new Tree(treeModel);
+        tree.setCellRenderer(new TemplateTreeCellRenderer());
+        tree.setRootVisible(false);
+        tree.setShowsRootHandles(true);
+        new TreeSpeedSearch(tree);
+
         installContextMenu();
-        tree.setRootVisible(true);
         tree.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -181,7 +187,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             }
         }
         treeModel.reload();
-        tree.setCellRenderer(new TemplateTreeCellRenderer());
+        TreeUtil.expandAll(tree);
     }
 
     private DefaultMutableTreeNode buildNode(StructureEntry entry) {
