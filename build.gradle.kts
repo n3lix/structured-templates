@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.example.structuredtemplates"
-version = "1.0.7"
+version = "1.0.9"
 
 repositories {
     mavenCentral()
@@ -23,6 +23,7 @@ tasks {
     withType<JavaCompile> {
         sourceCompatibility = "17"
         targetCompatibility = "17"
+        options.compilerArgs.add("-Xlint:deprecation")
     }
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions.jvmTarget = "17"

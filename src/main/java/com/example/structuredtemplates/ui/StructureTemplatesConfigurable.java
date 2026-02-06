@@ -74,7 +74,12 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         tree.setCellRenderer(new TemplateTreeCellRenderer());
         tree.setRootVisible(false);
         tree.setShowsRootHandles(true);
-        new TreeSpeedSearch(tree);
+        new TreeSpeedSearch(tree) {
+            @Override
+            protected String getElementText(Object element) {
+                return element != null ? element.toString() : null;
+            }
+        };
 
         installContextMenu();
         tree.addMouseListener(new java.awt.event.MouseAdapter() {

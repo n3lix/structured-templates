@@ -17,6 +17,14 @@
         A plugin for defining reusable hierarchical structure templates composed of folders and files, powered by IntelliJ File Templates.
     </description>
 
+    <change-notes><![CDATA[
+      <ul>
+        <li><b>Dynamic Creation Dialog:</b> The input dialog now dynamically reflects the selected template name when prompting for a new instance name.</li>
+        <li><b>Speed Search:</b> Added Speed Search support to the templates tree for faster navigation.</li>
+        <li><b>Auto-Expansion:</b> Templates are now automatically expanded when opening the settings page for better visibility.</li>
+      </ul>
+    ]]></change-notes>
+
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
