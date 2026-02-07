@@ -48,7 +48,6 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     private JButton importTemplatesButton;
     private JButton exportTemplatesButton;
 
-
     private List<StructureTemplate> workingTemplates;
 
     public StructureTemplatesConfigurable(Project project) {
@@ -323,7 +322,12 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         Object userObject = selectedNode.getUserObject();
         if (!(userObject instanceof StructureTemplate) && !(userObject instanceof StructureEntry)) {
-            return;
+            return; // unknown node
+        } else if (userObject instanceof StructureEntry parentEntry) {
+            if (parentEntry.getType() != StructureEntryType.FOLDER) {
+                JOptionPane.showMessageDialog(mainPanel, "You can only add files under templates or folders.");
+                return;
+            }
         }
 
         String fileName = JOptionPane.showInputDialog(mainPanel, "File name:", "New File", JOptionPane.PLAIN_MESSAGE);
@@ -331,21 +335,17 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             return;
         }
 
-        String templateName = chooseFileTemplateName();
-        if (templateName == null) {
+        FileTemplate fileTemplate = chooseFileTemplateName();
+        if (fileTemplate == null) {
             return; // cancelled
         }
 
-        StructureEntry fileEntry = new StructureEntry(fileName.trim(), templateName);
+        StructureEntry fileEntry = new StructureEntry(fileName.trim(), fileTemplate.getName(), fileTemplate.getExtension());
 
         if (userObject instanceof StructureTemplate template) {
             template.addEntry(fileEntry);
         } else {
             StructureEntry parentEntry = (StructureEntry) userObject;
-            if (parentEntry.getType() != StructureEntryType.FOLDER) {
-                JOptionPane.showMessageDialog(mainPanel, "You can only add files under templates or folders.");
-                return;
-            }
             parentEntry.addChild(fileEntry);
         }
 
@@ -355,20 +355,17 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         tree.scrollPathToVisible(new TreePath(fileNode.getPath()));
     }
 
-    private String chooseFileTemplateName() {
+    private FileTemplate chooseFileTemplateName() {
         FileTemplateManager manager = FileTemplateManager.getInstance(project);
-        FileTemplate[] templates = manager.getAllTemplates();
+        FileTemplate[] templates = manager.getTemplates(FileTemplateManager.DEFAULT_TEMPLATES_CATEGORY);
+
         if (templates.length == 0) {
             JOptionPane.showMessageDialog(mainPanel, "No file templates available in this project.");
             return null;
         }
 
-        String[] names = new String[templates.length];
-        for (int i = 0; i < templates.length; i++) {
-            names[i] = templates[i].getName();
-        }
-
-        ComboBox<String> comboBox = new ComboBox<>(names);
+        ComboBox<FileTemplate> comboBox = new ComboBox<>(templates);
+        comboBox.setRenderer(new ComboBoxRenderer());
         int result = JOptionPane.showConfirmDialog(
                 mainPanel,
                 comboBox,
@@ -377,7 +374,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
                 JOptionPane.PLAIN_MESSAGE
         );
         if (result == JOptionPane.OK_OPTION) {
-            return (String) comboBox.getSelectedItem();
+            return (FileTemplate) comboBox.getSelectedItem();
         }
         return null;
     }
@@ -488,10 +485,10 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         if (entry.getType() != StructureEntryType.FILE) return;
 
-        String newTemplate = chooseFileTemplateName();
+        FileTemplate newTemplate = chooseFileTemplateName();
         if (newTemplate == null) return;
 
-        entry.setFileTemplateName(newTemplate);
+        entry.setFileTemplateName(newTemplate.getName());
 
         treeModel.nodeChanged(node);
     }
@@ -574,14 +571,13 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         if (userObject instanceof StructureTemplate) {
             enableButtons(true, true);
-        } else if (userObject instanceof StructureEntry) {
-            StructureEntry entry = (StructureEntry) userObject;
+        } else if (userObject instanceof StructureEntry entry) {
             switch (entry.getType()) {
                 case FOLDER:
                     enableButtons(true, true);
                     break;
                 case FILE:
-                    enableButtons(false, true);
+                    enableButtons(false, false);
                     break;
                 default:
                     disableAllButtons();

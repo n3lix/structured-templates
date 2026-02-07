@@ -20,9 +20,11 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li><b>Dynamic Creation Dialog:</b> The input dialog now dynamically reflects the selected template name when prompting for a new instance name.</li>
-        <li><b>Speed Search:</b> Added Speed Search support to the templates tree for faster navigation.</li>
-        <li><b>Auto-Expansion:</b> Templates are now automatically expanded when opening the settings page for better visibility.</li>
+        <li>Added icons to the template tree and to the file‑template selection UI for clearer visual navigation.</li>
+        <li>File names now automatically include the correct extension derived from the selected File Template—no need to manually type <code>.ext</code> anymore.</li>
+        <li>Expanded the File Template selection list to include built‑in templates such as HTML and others previously unavailable.</li>
+        <li>Introduced a new variable: <code>${FILE_NAME_KEBAB}</code>. It joins the existing <code>${FILE_NAME_PASCAL}</code> and <code>${FILE_NAME_CAMEL}</code> naming helpers.</li>
+        <li>Templates containing live‑template variables now open in the editor with interactive placeholders, allowing users to fill values and navigate between them using Tab.</li>
       </ul>
     ]]></change-notes>
 
