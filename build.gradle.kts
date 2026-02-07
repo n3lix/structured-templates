@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.example.structuredtemplates"
-version = "1.1.0"
+version = "1.1.2"
 
 repositories {
     mavenCentral()

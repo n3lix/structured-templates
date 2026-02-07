@@ -75,7 +75,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         rootNode = new DefaultMutableTreeNode("Templates");
         treeModel = new DefaultTreeModel(rootNode);
         tree = new Tree(treeModel);
-        tree.setCellRenderer(new TemplateTreeCellRenderer());
+        tree.setCellRenderer(new TemplateTreeCellRenderer(project));
         tree.setRootVisible(false);
         tree.setShowsRootHandles(true);
         new TreeSpeedSearch(tree) {
@@ -520,6 +520,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         if (newTemplate == null) return;
 
         entry.setFileTemplateName(newTemplate.getName());
+        entry.setExtension(newTemplate.getExtension());
 
         treeModel.nodeChanged(node);
     }

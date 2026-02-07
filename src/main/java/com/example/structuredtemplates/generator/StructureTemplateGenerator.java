@@ -95,7 +95,8 @@ public class StructureTemplateGenerator {
                 VirtualFile file = parent.findChild(resolvedName);
                 if (file == null) {
                     String ext = template.getExtension().isEmpty() ? "" : "." + template.getExtension();
-                    file = parent.createChildData(this, resolvedName + ext);
+                    String fullName = resolvedName.endsWith(ext) ? resolvedName : resolvedName + ext; // ignore extension if the filename already has it
+                    file = parent.createChildData(this, fullName);
                 }
 
                 file.setBinaryContent(content.getBytes(StandardCharsets.UTF_8));

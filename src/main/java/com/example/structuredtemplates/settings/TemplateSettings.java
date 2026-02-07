@@ -79,15 +79,15 @@ public final class TemplateSettings implements PersistentStateComponent<Template
             componentTemplate.name = "Component";
 
             EntryState jsFile = new EntryState();
-            jsFile.name = "component.js";
+            jsFile.name = "component";
             jsFile.type = StructureEntryType.FILE.name();
-            jsFile.fileTemplateName = "JavaScript File"; // adjust to an existing template name
+            jsFile.fileTemplateName = "JavaScript File";
             jsFile.extension = "js";
 
             EntryState cssFile = new EntryState();
-            cssFile.name = "component.css";
+            cssFile.name = "style";
             cssFile.type = StructureEntryType.FILE.name();
-            cssFile.fileTemplateName = "CSS File"; // adjust to an existing template name
+            cssFile.fileTemplateName = "CSS File";
             cssFile.extension = "css";
 
             componentTemplate.entries.add(jsFile);
