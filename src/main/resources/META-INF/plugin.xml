@@ -20,14 +20,8 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>Added icons to the template tree and to the file‑template selection UI for clearer visual navigation.</li>
-        <li>File names now automatically include the correct extension derived from the selected File Template—no need to manually type <code>.ext</code> anymore.</li>
-        <li>Expanded the File Template selection list to include built‑in templates such as HTML and others previously unavailable.</li>
-        <li>Introduced a new variable: <code>${FILE_NAME_KEBAB}</code>. It joins the existing <code>${FILE_NAME_PASCAL}</code> and <code>${FILE_NAME_CAMEL}</code> naming helpers.</li>
-        <li>Templates containing live‑template variables now open in the editor with interactive placeholders, allowing users to fill values and navigate between them using Tab.</li>
-        <li>Added shortcuts for “Create New Template”, “Add Folder”, and “Add File” directly in the context menu.</li>
-        <li>Creating a new file or folder while a file is selected now automatically places it under the nearest parent folder/template for more intuitive structure editing.</li>
-        <li>Added Delete key support to quickly remove nodes directly from the keyboard.</li>
+        <li>Fixed an issue where updating a template did not refresh its associated icon.</li>
+        <li>Detect file entry icon when using templates from an older version.</li>
       </ul>
     ]]></change-notes>
 

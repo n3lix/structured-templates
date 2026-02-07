@@ -5,16 +5,24 @@ import com.example.structuredtemplates.model.StructureEntryType;
 import com.example.structuredtemplates.model.StructureTemplate;
 import com.example.structuredtemplates.util.IconUtils;
 import com.intellij.icons.AllIcons;
+import com.intellij.ide.fileTemplates.FileTemplate;
+import com.intellij.ide.fileTemplates.FileTemplateManager;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 public class TemplateTreeCellRenderer extends ColoredTreeCellRenderer {
+    private final Project project;
+
+    public TemplateTreeCellRenderer(Project project){
+        this.project = project;
+    }
 
     @Override
     public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
@@ -49,6 +57,31 @@ public class TemplateTreeCellRenderer extends ColoredTreeCellRenderer {
                         FileType fileType = FileTypeManager.getInstance().getFileTypeByExtension(se.getExtension());
                         setIcon(fileType.getIcon());
                     } else {
+                        //if the entry doesn't have an extension (old version of the plugin) try to detect it from File Template
+
+                        FileTemplateManager manager = FileTemplateManager.getInstance(project);
+                        FileTemplate[] templates = manager.getTemplates(FileTemplateManager.DEFAULT_TEMPLATES_CATEGORY);
+
+                        FileTemplate matched = null;
+                        for (FileTemplate t : templates) {
+                            if (t.getName().equals(se.getFileTemplateName())) {
+                                matched = t;
+                                break;
+                            }
+                        }
+
+                        if (matched != null) {
+                            String templateExt = matched.getExtension();
+                            if (!templateExt.isEmpty()) {
+                                FileType fileType = FileTypeManager.getInstance().getFileTypeByExtension(templateExt);
+                                if (fileType.getIcon() != null) {
+                                    setIcon(fileType.getIcon());
+                                    return;
+                                }
+                            }
+                        }
+
+                        //fallback to Text icon if nothing matched
                         setIcon(AllIcons.FileTypes.Text);
                     }
                 }
