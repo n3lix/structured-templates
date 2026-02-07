@@ -40,6 +40,7 @@ public final class TemplateSettings implements PersistentStateComponent<Template
         public String name;
         public String type; // FOLDER or FILE
         public String fileTemplateName;
+        public String extension;
         public List<EntryState> children = new ArrayList<>();
     }
 
@@ -81,11 +82,13 @@ public final class TemplateSettings implements PersistentStateComponent<Template
             jsFile.name = "component.js";
             jsFile.type = StructureEntryType.FILE.name();
             jsFile.fileTemplateName = "JavaScript File"; // adjust to an existing template name
+            jsFile.extension = "js";
 
             EntryState cssFile = new EntryState();
             cssFile.name = "component.css";
             cssFile.type = StructureEntryType.FILE.name();
             cssFile.fileTemplateName = "CSS File"; // adjust to an existing template name
+            cssFile.extension = "css";
 
             componentTemplate.entries.add(jsFile);
             componentTemplate.entries.add(cssFile);
@@ -128,6 +131,7 @@ public final class TemplateSettings implements PersistentStateComponent<Template
         es.name = entry.getName();
         es.type = entry.getType().name();
         es.fileTemplateName = entry.getFileTemplateName();
+        es.extension = entry.getExtension();
         if (entry.getChildren() != null) {
             for (StructureEntry child : entry.getChildren()) {
                 es.children.add(toEntryState(child));
@@ -140,7 +144,7 @@ public final class TemplateSettings implements PersistentStateComponent<Template
         StructureEntryType type = StructureEntryType.valueOf(es.type);
         StructureEntry entry;
         if (type == StructureEntryType.FILE) {
-            entry = new StructureEntry(es.name, es.fileTemplateName);
+            entry = new StructureEntry(es.name, es.fileTemplateName, es.extension);
         } else {
             entry = new StructureEntry(es.name, type);
         }

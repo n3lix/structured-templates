@@ -3,14 +3,27 @@ package com.example.structuredtemplates.generator;
 import com.example.structuredtemplates.model.StructureEntry;
 import com.example.structuredtemplates.model.StructureEntryType;
 import com.example.structuredtemplates.model.StructureTemplate;
+import com.intellij.codeInsight.template.Template;
+import com.intellij.codeInsight.template.TemplateBuilderImpl;
+import com.intellij.codeInsight.template.TemplateManager;
+import com.intellij.codeInsight.template.impl.TextExpression;
 import com.intellij.ide.fileTemplates.FileTemplate;
 import com.intellij.ide.fileTemplates.FileTemplateManager;
 import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class StructureTemplateGenerator {
 
@@ -23,13 +36,11 @@ public class StructureTemplateGenerator {
     public void generate(StructureTemplate template, VirtualFile targetDir, String rootName) {
         WriteCommandAction.runWriteCommandAction(project, () -> {
             try {
-                // Create root folder
                 VirtualFile root = targetDir.findChild(rootName);
                 if (root == null) {
                     root = targetDir.createChildDirectory(this, rootName);
                 }
 
-                // Generate template contents inside root
                 for (StructureEntry entry : template.getEntries()) {
                     createEntry(entry, root, rootName);
                 }
@@ -39,6 +50,19 @@ public class StructureTemplateGenerator {
             }
         });
     }
+
+    private FileTemplate findTemplateByName(String name) {
+        FileTemplateManager manager = FileTemplateManager.getInstance(project);
+        FileTemplate[] templates = manager.getTemplates(FileTemplateManager.DEFAULT_TEMPLATES_CATEGORY);
+
+        for (FileTemplate t : templates) {
+            if (t.getName().equals(name)) {
+                return t;
+            }
+        }
+        return null;
+    }
+
 
     private void createEntry(StructureEntry entry, VirtualFile parent, String rootName) {
         try {
@@ -53,8 +77,7 @@ public class StructureTemplateGenerator {
                     createEntry(child, folder, rootName);
                 }
             } else {
-                FileTemplate template = FileTemplateManager.getInstance(project)
-                        .getTemplate(entry.getFileTemplateName());
+                FileTemplate template = findTemplateByName(entry.getFileTemplateName());
 
                 if (template == null) {
                     parent.createChildData(this, resolvedName);
@@ -65,14 +88,44 @@ public class StructureTemplateGenerator {
                 props.setProperty("FILE_NAME", rootName);
                 props.setProperty("FILE_NAME_CAMEL", toCamelCase(rootName));
                 props.setProperty("FILE_NAME_PASCAL", toPascalCase(rootName));
+                props.setProperty("FILE_NAME_KEBAB", toKebabCase(rootName));
 
                 String content = template.getText(props);
 
                 VirtualFile file = parent.findChild(resolvedName);
                 if (file == null) {
-                    file = parent.createChildData(this, resolvedName);
+                    String ext = template.getExtension().isEmpty() ? "" : "." + template.getExtension();
+                    file = parent.createChildData(this, resolvedName + ext);
                 }
+
                 file.setBinaryContent(content.getBytes(StandardCharsets.UTF_8));
+                Pattern pattern = Pattern.compile("\\$([A-Za-z0-9_]+)\\$");
+
+                boolean hasVariables = pattern.matcher(content).find();
+                if (!hasVariables) {
+                    return;
+                }
+
+                PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
+                Editor editor = FileEditorManager.getInstance(project)
+                        .openTextEditor(new OpenFileDescriptor(project, file), true);
+
+                TemplateBuilderImpl builder = new TemplateBuilderImpl(psiFile);
+
+                String text = psiFile.getText();
+                Matcher matcher = pattern.matcher(text);
+
+                while (matcher.find()) {
+                    String varName = matcher.group(1);
+
+                    PsiElement element = psiFile.findElementAt(matcher.start());
+                    if (element != null) {
+                        builder.replaceElement(element, varName, new TextExpression(varName), true);
+                    }
+                }
+
+                Template tmpl = builder.buildInlineTemplate();
+                TemplateManager.getInstance(project).startTemplate(editor, tmpl);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -92,6 +145,10 @@ public class StructureTemplateGenerator {
             result = result.replace("${FILE_NAME_CAMEL}", toCamelCase(rootName));
         }
 
+        if (result.contains("${FILE_NAME_KEBAB}")) {
+            result = result.replace("${FILE_NAME_KEBAB}", toKebabCase(rootName));
+        }
+
         if (result.contains("${FILE_NAME}")) {
             result = result.replace("${FILE_NAME}", rootName);
         }
@@ -99,18 +156,15 @@ public class StructureTemplateGenerator {
         return result;
     }
 
-
     public static String toCamelCase(String input) {
         if (input == null || input.isBlank()) {
             return "";
         }
 
-        // If already PascalCase (e.g., MyComponent)
         if (input.matches("[A-Z][a-zA-Z0-9]*")) {
             return Character.toLowerCase(input.charAt(0)) + input.substring(1);
         }
 
-        // Otherwise treat as words separated by space, hyphen, underscore
         String[] parts = input.trim().split("[\\s_\\-]+");
         if (parts.length == 0) return "";
 
@@ -134,4 +188,19 @@ public class StructureTemplateGenerator {
         if (camel.isEmpty()) return camel;
         return Character.toUpperCase(camel.charAt(0)) + camel.substring(1);
     }
+
+    public static String toKebabCase(String input) {
+        if (input == null || input.isEmpty()) return input;
+
+        String spaced = input.replaceAll("([a-z])([A-Z])", "$1 $2");
+
+        spaced = spaced.replaceAll("[_\\s]+", " ").trim();
+
+        String[] words = spaced.split(" ");
+
+        return String.join("-", Arrays.stream(words)
+                .map(String::toLowerCase)
+                .toArray(String[]::new));
+    }
+
 }

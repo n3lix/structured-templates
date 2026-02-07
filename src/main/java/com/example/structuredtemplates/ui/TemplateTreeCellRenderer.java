@@ -5,6 +5,8 @@ import com.example.structuredtemplates.model.StructureEntryType;
 import com.example.structuredtemplates.model.StructureTemplate;
 import com.example.structuredtemplates.util.IconUtils;
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +43,14 @@ public class TemplateTreeCellRenderer extends ColoredTreeCellRenderer {
                 if (se.getType() == StructureEntryType.FOLDER) {
                     setIcon(AllIcons.Nodes.Folder);
                 } else {
-                    setIcon(AllIcons.FileTypes.Text);
+                    String ext = se.getExtension();
+
+                    if (ext != null && !ext.isEmpty()) {
+                        FileType fileType = FileTypeManager.getInstance().getFileTypeByExtension(se.getExtension());
+                        setIcon(fileType.getIcon());
+                    } else {
+                        setIcon(AllIcons.FileTypes.Text);
+                    }
                 }
             }
         }

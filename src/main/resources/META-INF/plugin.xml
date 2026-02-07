@@ -14,14 +14,20 @@
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description>
-        A plugin for defining reusable hierarchical structure templates composed of folders and files, powered by IntelliJ File Templates.
+        A plugin for defining reusable hierarchical structure templates composed of folders and files, powered by
+        IntelliJ File Templates.
     </description>
 
     <change-notes><![CDATA[
       <ul>
-        <li><b>Dynamic Creation Dialog:</b> The input dialog now dynamically reflects the selected template name when prompting for a new instance name.</li>
-        <li><b>Speed Search:</b> Added Speed Search support to the templates tree for faster navigation.</li>
-        <li><b>Auto-Expansion:</b> Templates are now automatically expanded when opening the settings page for better visibility.</li>
+        <li>Added icons to the template tree and to the file‑template selection UI for clearer visual navigation.</li>
+        <li>File names now automatically include the correct extension derived from the selected File Template—no need to manually type <code>.ext</code> anymore.</li>
+        <li>Expanded the File Template selection list to include built‑in templates such as HTML and others previously unavailable.</li>
+        <li>Introduced a new variable: <code>${FILE_NAME_KEBAB}</code>. It joins the existing <code>${FILE_NAME_PASCAL}</code> and <code>${FILE_NAME_CAMEL}</code> naming helpers.</li>
+        <li>Templates containing live‑template variables now open in the editor with interactive placeholders, allowing users to fill values and navigate between them using Tab.</li>
+        <li>Added shortcuts for “Create New Template”, “Add Folder”, and “Add File” directly in the context menu.</li>
+        <li>Creating a new file or folder while a file is selected now automatically places it under the nearest parent folder/template for more intuitive structure editing.</li>
+        <li>Added Delete key support to quickly remove nodes directly from the keyboard.</li>
       </ul>
     ]]></change-notes>
 
@@ -39,12 +45,18 @@
     </extensions>
 
     <actions>
-        <action id="com.example.structuredtemplates.CreateFromStructureTemplateGroup"
+        <group
+                id="com.example.structuredtemplates.CreateFromStructureTemplateGroup"
                 class="com.example.structuredtemplates.CreateFromStructureTemplateGroup"
                 text="Create From Structured Template"
                 description="Generate folders/files from a structure template"
-                icon="/icons/action.svg">
-            <add-to-group group-id="NewGroup" anchor="after" relative-to-action="NewFile"/>
-        </action>
+                icon="/icons/action.svg"
+                popup="true">
+            <add-to-group
+                    group-id="NewGroup"
+                    anchor="after"
+                    relative-to-action="NewFile"/>
+
+        </group>
     </actions>
 </idea-plugin>

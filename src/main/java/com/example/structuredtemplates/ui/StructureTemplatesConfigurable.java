@@ -10,6 +10,7 @@ import com.intellij.ide.fileTemplates.FileTemplate;
 import com.intellij.ide.fileTemplates.FileTemplateManager;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.ComboBox;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,10 +26,14 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 public class StructureTemplatesConfigurable implements SearchableConfigurable {
@@ -46,7 +51,6 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     private JButton removeNodeButton;
     private JButton importTemplatesButton;
     private JButton exportTemplatesButton;
-
 
     private List<StructureTemplate> workingTemplates;
 
@@ -91,6 +95,21 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             }
         });
 
+        InputMap inputMap = tree.getInputMap(JComponent.WHEN_FOCUSED);
+        ActionMap actionMap = tree.getActionMap();
+
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "deleteNode");
+
+        actionMap.put("deleteNode", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                TreePath path = tree.getSelectionPath();
+                if (path == null) return;
+
+                onRemoveNode();
+            }
+        });
+
         JBScrollPane scrollPane = new JBScrollPane(tree);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
@@ -101,6 +120,10 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         addFolderButton = new JButton("Add Folder");
         addFileButton = new JButton("Add File");
         removeNodeButton = new JButton("Remove Node");
+
+        addFolderButton.setEnabled(false);
+        addFileButton.setEnabled(false);
+        removeNodeButton.setEnabled(false);
 
         buttonPanel.add(addTemplateButton);
         buttonPanel.add(Box.createVerticalStrut(5));
@@ -145,6 +168,20 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         removeItem.addActionListener(e -> onRemoveNode());
         menu.add(removeItem);
 
+        menu.addSeparator();
+
+        JMenuItem createNewTemplate = new JMenuItem("Create New Template");
+        createNewTemplate.addActionListener(e -> onAddTemplate());
+        menu.add(createNewTemplate);
+
+        JMenuItem addFolder = new JMenuItem("Add Folder");
+        addFolder.addActionListener(e -> onAddFolder());
+        menu.add(addFolder);
+
+        JMenuItem addFile = new JMenuItem("Add File");
+        addFile.addActionListener(e -> onAddFile());
+        menu.add(addFile);
+
         tree.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mousePressed(java.awt.event.MouseEvent e) {
@@ -157,7 +194,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             }
 
             private void showMenu(java.awt.event.MouseEvent e) {
-                TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+                TreePath path = tree.getClosestPathForLocation(e.getX(), e.getY());
                 if (path == null) return;
 
                 tree.setSelectionPath(path);
@@ -206,6 +243,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     }
 
     private void initListeners() {
+        tree.addTreeSelectionListener(e -> onTreeNodeSelection());
         addTemplateButton.addActionListener(e -> onAddTemplate());
         addFolderButton.addActionListener(e -> onAddFolder());
         addFileButton.addActionListener(e -> onAddFile());
@@ -218,9 +256,8 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         DefaultMutableTreeNode selectedNode = getSelectedNode();
         if (selectedNode == null) return;
         Object userObject = selectedNode.getUserObject();
-        if (!(userObject instanceof StructureTemplate)) return;
+        if (!(userObject instanceof StructureTemplate template)) return;
 
-        StructureTemplate template = (StructureTemplate) userObject;
         String iconPath = chooseIcon();
         if (iconPath != null) {
             template.setIconPath(iconPath);
@@ -269,7 +306,8 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         DefaultMutableTreeNode templateNode = new DefaultMutableTreeNode(template);
         rootNode.add(templateNode);
-        treeModel.reload(rootNode);
+        reloadTree(rootNode, false);
+
         tree.scrollPathToVisible(new TreePath(templateNode.getPath()));
     }
 
@@ -292,14 +330,12 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         StructureEntry folderEntry = new StructureEntry(name.trim(), StructureEntryType.FOLDER);
 
-        if (userObject instanceof StructureTemplate) {
-            StructureTemplate template = (StructureTemplate) userObject;
+        if (userObject instanceof StructureTemplate template) {
             template.addEntry(folderEntry);
         } else {
             StructureEntry parentEntry = (StructureEntry) userObject;
             if (parentEntry.getType() != StructureEntryType.FOLDER) {
-                JOptionPane.showMessageDialog(mainPanel, "You can only add folders under templates or folders.");
-                return;
+                selectedNode = (DefaultMutableTreeNode) selectedNode.getParent(); // if selected node is file then create the file udner its parent.
             }
             parentEntry.addChild(folderEntry);
         }
@@ -319,7 +355,9 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         Object userObject = selectedNode.getUserObject();
         if (!(userObject instanceof StructureTemplate) && !(userObject instanceof StructureEntry)) {
-            return;
+            return; // unknown node
+        } else if (userObject instanceof StructureEntry parentEntry && parentEntry.getType() != StructureEntryType.FOLDER) {
+            selectedNode = (DefaultMutableTreeNode) selectedNode.getParent(); // if selected node is file then create the file udner its parent.
         }
 
         String fileName = JOptionPane.showInputDialog(mainPanel, "File name:", "New File", JOptionPane.PLAIN_MESSAGE);
@@ -327,22 +365,17 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             return;
         }
 
-        String templateName = chooseFileTemplateName();
-        if (templateName == null) {
+        FileTemplate fileTemplate = chooseFileTemplateName();
+        if (fileTemplate == null) {
             return; // cancelled
         }
 
-        StructureEntry fileEntry = new StructureEntry(fileName.trim(), templateName);
+        StructureEntry fileEntry = new StructureEntry(fileName.trim(), fileTemplate.getName(), fileTemplate.getExtension());
 
-        if (userObject instanceof StructureTemplate) {
-            StructureTemplate template = (StructureTemplate) userObject;
+        if (userObject instanceof StructureTemplate template) {
             template.addEntry(fileEntry);
         } else {
             StructureEntry parentEntry = (StructureEntry) userObject;
-            if (parentEntry.getType() != StructureEntryType.FOLDER) {
-                JOptionPane.showMessageDialog(mainPanel, "You can only add files under templates or folders.");
-                return;
-            }
             parentEntry.addChild(fileEntry);
         }
 
@@ -352,20 +385,17 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         tree.scrollPathToVisible(new TreePath(fileNode.getPath()));
     }
 
-    private String chooseFileTemplateName() {
+    private FileTemplate chooseFileTemplateName() {
         FileTemplateManager manager = FileTemplateManager.getInstance(project);
-        FileTemplate[] templates = manager.getAllTemplates();
+        FileTemplate[] templates = manager.getTemplates(FileTemplateManager.DEFAULT_TEMPLATES_CATEGORY);
+
         if (templates.length == 0) {
             JOptionPane.showMessageDialog(mainPanel, "No file templates available in this project.");
             return null;
         }
 
-        String[] names = new String[templates.length];
-        for (int i = 0; i < templates.length; i++) {
-            names[i] = templates[i].getName();
-        }
-
-        JComboBox<String> comboBox = new JComboBox<>(names);
+        ComboBox<FileTemplate> comboBox = new ComboBox<>(templates);
+        comboBox.setRenderer(new ComboBoxRenderer());
         int result = JOptionPane.showConfirmDialog(
                 mainPanel,
                 comboBox,
@@ -374,7 +404,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
                 JOptionPane.PLAIN_MESSAGE
         );
         if (result == JOptionPane.OK_OPTION) {
-            return (String) comboBox.getSelectedItem();
+            return (FileTemplate) comboBox.getSelectedItem();
         }
         return null;
     }
@@ -391,8 +421,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         if (userObject instanceof StructureTemplate) {
             workingTemplates.remove(userObject);
-        } else if (userObject instanceof StructureEntry) {
-            StructureEntry entry = (StructureEntry) userObject;
+        } else if (userObject instanceof StructureEntry entry) {
             if (parentObject instanceof StructureTemplate) {
                 ((StructureTemplate) parentObject).removeEntry(entry);
             } else if (parentObject instanceof StructureEntry) {
@@ -401,7 +430,9 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         }
 
         parentNode.remove(selectedNode);
-        treeModel.reload(parentNode);
+        reloadTree(parentNode, false);
+
+        tree.clearSelection();
     }
 
     private DefaultMutableTreeNode getSelectedNode() {
@@ -481,15 +512,14 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         if (node == null) return;
 
         Object obj = node.getUserObject();
-        if (!(obj instanceof StructureEntry)) return;
+        if (!(obj instanceof StructureEntry entry)) return;
 
-        StructureEntry entry = (StructureEntry) obj;
         if (entry.getType() != StructureEntryType.FILE) return;
 
-        String newTemplate = chooseFileTemplateName();
+        FileTemplate newTemplate = chooseFileTemplateName();
         if (newTemplate == null) return;
 
-        entry.setFileTemplateName(newTemplate);
+        entry.setFileTemplateName(newTemplate.getName());
 
         treeModel.nodeChanged(node);
     }
@@ -498,7 +528,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Import Template Pack");
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        // 🔥 Only show .xml files
+
         chooser.setAcceptAllFileFilterUsed(false);
         chooser.addChoosableFileFilter( new javax.swing.filechooser.FileNameExtensionFilter("XML Files (*.xml)", "xml") );
 
@@ -513,7 +543,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         try {
             new TemplateImportExportManager(project).importFromFile(file);
-            // Refresh UI
+
             initData();
             treeModel.reload();
             JOptionPane.showMessageDialog(mainPanel, "Template pack imported successfully.");
@@ -555,6 +585,48 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         }
     }
 
+    private void onTreeNodeSelection() {
+        DefaultMutableTreeNode selectedNode = getSelectedNode();
 
+        if (selectedNode == null) {
+            disableAllButtons();
+            return;
+        }
 
+        Object userObject = selectedNode.getUserObject();
+
+        if (!(userObject instanceof StructureTemplate) && !(userObject instanceof StructureEntry)) {
+            disableAllButtons();
+            return;
+        }
+
+        enableButtons(true, true);
+    }
+
+    private void disableAllButtons() {
+        addFolderButton.setEnabled(false);
+        addFileButton.setEnabled(false);
+        removeNodeButton.setEnabled(false);
+    }
+
+    private void enableButtons(boolean enableFolder, boolean enableFile) {
+        addFolderButton.setEnabled(enableFolder);
+        addFileButton.setEnabled(enableFile);
+        removeNodeButton.setEnabled(true);
+    }
+
+    private void reloadTree(TreeNode treeNode, boolean collapseAll) {
+        if (collapseAll) {
+            treeModel.reload(treeNode);
+            return;
+        }
+
+        Enumeration<TreePath> expanded = tree.getExpandedDescendants(new TreePath(treeNode));
+        treeModel.reload(treeNode);
+        if (expanded != null) {
+            while (expanded.hasMoreElements()) {
+                tree.expandPath(expanded.nextElement());
+            }
+        }
+    }
 }

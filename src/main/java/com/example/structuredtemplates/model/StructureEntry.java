@@ -8,7 +8,8 @@ public class StructureEntry {
 
     private String name;
     private StructureEntryType type;
-    private String fileTemplateName; // only for FILE
+    private String fileTemplateName;
+    private String extension;
     private final List<StructureEntry> children = new ArrayList<>();
 
     public StructureEntry(String name, StructureEntryType type) {
@@ -16,10 +17,11 @@ public class StructureEntry {
         this.type = type;
     }
 
-    public StructureEntry(String name, String fileTemplateName) {
+    public StructureEntry(String name, String fileTemplateName, String ext) {
         this.name = name;
         this.type = StructureEntryType.FILE;
         this.fileTemplateName = fileTemplateName;
+        this.extension = ext;
     }
 
     public String getName() {
@@ -37,6 +39,10 @@ public class StructureEntry {
     public void setType(StructureEntryType type) {
         this.type = type;
     }
+
+    public String getExtension() { return extension; }
+
+    public void setExtension(String ext) { extension = ext; }
 
     public String getFileTemplateName() {
         return fileTemplateName;
