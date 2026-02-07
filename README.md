@@ -15,9 +15,10 @@ This plugin is ideal for teams and developers who frequently create similar comp
   Each file in your structure can use any IntelliJ File Template for fully customizable content.
 
 - **Custom variables for smarter generation**  
-  Use two additional variables inside File Templates:
-    - `$FILE_NAME_CAMEL` – user input in camelCase
-    - `$FILE_NAME_PASCAL` – user input in PascalCase
+  Use three additional variables inside File Templates:
+    - `${FILE_NAME_CAMEL}` – user input in camelCase
+    - `${FILE_NAME_PASCAL}` – user input in PascalCase
+    - `${FILE_NAME_KEBAB}` – user input in kebab-case
 
 - **Generate from the New menu**  
   Right‑click any folder → **New → Create From Structured Template** → pick a template → done.
