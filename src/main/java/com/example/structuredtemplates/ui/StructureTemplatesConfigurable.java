@@ -4,13 +4,20 @@ import com.example.structuredtemplates.model.StructureEntry;
 import com.example.structuredtemplates.model.StructureEntryType;
 import com.example.structuredtemplates.model.StructureTemplate;
 import com.example.structuredtemplates.settings.TemplateSettings;
+import com.example.structuredtemplates.ui.actions.*;
 import com.example.structuredtemplates.util.IconUtils;
 import com.example.structuredtemplates.util.TemplateImportExportManager;
+import com.intellij.icons.AllIcons;
 import com.intellij.ide.fileTemplates.FileTemplate;
 import com.intellij.ide.fileTemplates.FileTemplateManager;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.ui.JBColor;
+import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,6 +29,7 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -37,21 +45,17 @@ import java.util.Enumeration;
 import java.util.List;
 
 public class StructureTemplatesConfigurable implements SearchableConfigurable {
-
     private final Project project;
-
     private JPanel mainPanel;
     private Tree tree;
     private DefaultTreeModel treeModel;
     private DefaultMutableTreeNode rootNode;
-
-    private JButton addTemplateButton;
-    private JButton addFolderButton;
-    private JButton addFileButton;
-    private JButton removeNodeButton;
-    private JButton importTemplatesButton;
-    private JButton exportTemplatesButton;
-
+    private DefaultActionGroup leftGroup;
+    private DefaultActionGroup rightGroup;
+    private ToolbarAction addFolderAction;
+    private ToolbarAction addFileAction;
+    private ToolbarAction removeNodeAction;
+    private ActionToolbar leftToolbar;
     private List<StructureTemplate> workingTemplates;
 
     public StructureTemplatesConfigurable(Project project) {
@@ -72,18 +76,25 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     public @Nullable JComponent createComponent() {
         mainPanel = new JPanel(new BorderLayout());
 
+        mainPanel.add(createToolBar(), BorderLayout.NORTH);
+        mainPanel.add(createTree(), BorderLayout.CENTER);
+
+        initData();
+        tree.addTreeSelectionListener(e -> onTreeNodeSelection());
+
+        return mainPanel;
+    }
+
+    private JBScrollPane createTree() {
         rootNode = new DefaultMutableTreeNode("Templates");
         treeModel = new DefaultTreeModel(rootNode);
         tree = new Tree(treeModel);
         tree.setCellRenderer(new TemplateTreeCellRenderer(project));
         tree.setRootVisible(false);
         tree.setShowsRootHandles(true);
-        new TreeSpeedSearch(tree) {
-            @Override
-            protected String getElementText(Object element) {
-                return element != null ? element.toString() : null;
-            }
-        };
+
+        // on a JTree or com.intellij.ui.tree.Tree
+        TreeSpeedSearch.installOn(tree);
 
         installContextMenu();
         tree.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -110,43 +121,47 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             }
         });
 
-        JBScrollPane scrollPane = new JBScrollPane(tree);
-        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        return new JBScrollPane(tree);
+    }
 
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
+    private JPanel createToolBar() {
+        leftGroup = new DefaultActionGroup();
+        leftGroup.add(new ToolbarAction("Add Template", "Create a new template", AllIcons.Actions.AddList)
+                .onClick(this::onAddTemplate));
+        leftGroup.addSeparator();
+        addFolderAction = new ToolbarAction("Add Folder", "Create a new folder", AllIcons.Actions.NewFolder)
+                .onClick(this::onAddFolder);
+        addFileAction = new ToolbarAction("Add File", "Create a new file", AllIcons.Actions.AddFile)
+                .onClick(this::onAddFile);
+        removeNodeAction = new ToolbarAction("Delete Node", "Delete a node", AllIcons.General.Remove)
+                .onClick(this::onRemoveNode);
+        leftGroup.add(addFolderAction);
+        leftGroup.add(addFileAction);
+        leftGroup.addSeparator();
+        leftGroup.add(removeNodeAction);
+        addFolderAction.setEnabled(false);
+        addFileAction.setEnabled(false);
+        removeNodeAction.setEnabled(false);
 
-        addTemplateButton = new JButton("Add Template");
-        addFolderButton = new JButton("Add Folder");
-        addFileButton = new JButton("Add File");
-        removeNodeButton = new JButton("Remove Node");
+        rightGroup = new DefaultActionGroup();
+        rightGroup.add(new ToolbarAction("Import Templates", "Import all templates", AllIcons.Actions.Download)
+                .onClick(this::onImportTemplates));
+        rightGroup.add(new ToolbarAction("Export Templates", "Export all templates", AllIcons.Actions.Upload)
+                .onClick(this::onExportTemplates));
 
-        addFolderButton.setEnabled(false);
-        addFileButton.setEnabled(false);
-        removeNodeButton.setEnabled(false);
 
-        buttonPanel.add(addTemplateButton);
-        buttonPanel.add(Box.createVerticalStrut(5));
-        buttonPanel.add(addFolderButton);
-        buttonPanel.add(Box.createVerticalStrut(5));
-        buttonPanel.add(addFileButton);
-        buttonPanel.add(Box.createVerticalStrut(5));
-        buttonPanel.add(removeNodeButton);
+        leftToolbar = ActionManager.getInstance()
+                .createActionToolbar("LeftToolbar", leftGroup, true);
 
-        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        ActionToolbar rightToolbar = ActionManager.getInstance()
+                .createActionToolbar("RightToolbar", rightGroup, true);
 
-        importTemplatesButton = new JButton("Import Templates...");
-        exportTemplatesButton = new JButton("Export Templates...");
-        topBar.add(importTemplatesButton);
-        topBar.add(exportTemplatesButton);
+        JPanel toolbarPanel = new JPanel(new BorderLayout());
+        toolbarPanel.add(leftToolbar.getComponent(), BorderLayout.WEST);
+        toolbarPanel.add(rightToolbar.getComponent(), BorderLayout.EAST);
 
-        mainPanel.add(topBar, BorderLayout.NORTH);
-        mainPanel.add(buttonPanel, BorderLayout.EAST);
-
-        initData();
-        initListeners();
-
-        return mainPanel;
+        toolbarPanel.setBorder(JBUI.Borders.customLine(JBColor.border(), 1));
+        return toolbarPanel;
     }
 
     private void installContextMenu() {
@@ -242,16 +257,6 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         return node;
     }
 
-    private void initListeners() {
-        tree.addTreeSelectionListener(e -> onTreeNodeSelection());
-        addTemplateButton.addActionListener(e -> onAddTemplate());
-        addFolderButton.addActionListener(e -> onAddFolder());
-        addFileButton.addActionListener(e -> onAddFile());
-        removeNodeButton.addActionListener(e -> onRemoveNode());
-        importTemplatesButton.addActionListener(e -> onImportTemplates());
-        exportTemplatesButton.addActionListener(e -> onExportTemplates());
-    }
-
     private void onChangeIcon() {
         DefaultMutableTreeNode selectedNode = getSelectedNode();
         if (selectedNode == null) return;
@@ -330,13 +335,14 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         StructureEntry folderEntry = new StructureEntry(name.trim(), StructureEntryType.FOLDER);
 
+        if (userObject instanceof StructureEntry entry && entry.getType() != StructureEntryType.FOLDER) {
+            selectedNode = (DefaultMutableTreeNode) selectedNode.getParent();
+            userObject = selectedNode.getUserObject();
+        }
+
         if (userObject instanceof StructureTemplate template) {
             template.addEntry(folderEntry);
-        } else {
-            StructureEntry parentEntry = (StructureEntry) userObject;
-            if (parentEntry.getType() != StructureEntryType.FOLDER) {
-                selectedNode = (DefaultMutableTreeNode) selectedNode.getParent(); // if selected node is file then create the file udner its parent.
-            }
+        } else if (userObject instanceof StructureEntry parentEntry) {
             parentEntry.addChild(folderEntry);
         }
 
@@ -356,8 +362,11 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         Object userObject = selectedNode.getUserObject();
         if (!(userObject instanceof StructureTemplate) && !(userObject instanceof StructureEntry)) {
             return; // unknown node
-        } else if (userObject instanceof StructureEntry parentEntry && parentEntry.getType() != StructureEntryType.FOLDER) {
-            selectedNode = (DefaultMutableTreeNode) selectedNode.getParent(); // if selected node is file then create the file udner its parent.
+        }
+
+        if (userObject instanceof StructureEntry entry && entry.getType() != StructureEntryType.FOLDER) {
+            selectedNode = (DefaultMutableTreeNode) selectedNode.getParent();
+            userObject = selectedNode.getUserObject();
         }
 
         String fileName = JOptionPane.showInputDialog(mainPanel, "File name:", "New File", JOptionPane.PLAIN_MESSAGE);
@@ -374,8 +383,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         if (userObject instanceof StructureTemplate template) {
             template.addEntry(fileEntry);
-        } else {
-            StructureEntry parentEntry = (StructureEntry) userObject;
+        } else if (userObject instanceof StructureEntry parentEntry) {
             parentEntry.addChild(fileEntry);
         }
 
@@ -467,10 +475,12 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         tree = null;
         treeModel = null;
         rootNode = null;
-        addTemplateButton = null;
-        addFolderButton = null;
-        addFileButton = null;
-        removeNodeButton = null;
+        addFolderAction = null;
+        addFileAction = null;
+        removeNodeAction = null;
+        leftGroup = null;
+        rightGroup = null;
+        leftToolbar = null;
     }
 
     private void renameSelectedNode() {
@@ -531,7 +541,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
         chooser.setAcceptAllFileFilterUsed(false);
-        chooser.addChoosableFileFilter( new javax.swing.filechooser.FileNameExtensionFilter("XML Files (*.xml)", "xml") );
+        chooser.addChoosableFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("XML Files (*.xml)", "xml"));
 
         int result = chooser.showOpenDialog(mainPanel);
         if (result != JFileChooser.APPROVE_OPTION) return;
@@ -590,30 +600,24 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         DefaultMutableTreeNode selectedNode = getSelectedNode();
 
         if (selectedNode == null) {
-            disableAllButtons();
+            addFolderAction.setEnabled(false);
+            addFileAction.setEnabled(false);
+            removeNodeAction.setEnabled(false);
             return;
         }
 
         Object userObject = selectedNode.getUserObject();
 
         if (!(userObject instanceof StructureTemplate) && !(userObject instanceof StructureEntry)) {
-            disableAllButtons();
+            addFolderAction.setEnabled(false);
+            addFileAction.setEnabled(false);
+            removeNodeAction.setEnabled(false);
             return;
         }
 
-        enableButtons(true, true);
-    }
-
-    private void disableAllButtons() {
-        addFolderButton.setEnabled(false);
-        addFileButton.setEnabled(false);
-        removeNodeButton.setEnabled(false);
-    }
-
-    private void enableButtons(boolean enableFolder, boolean enableFile) {
-        addFolderButton.setEnabled(enableFolder);
-        addFileButton.setEnabled(enableFile);
-        removeNodeButton.setEnabled(true);
+        addFolderAction.setEnabled(true);
+        addFileAction.setEnabled(true);
+        removeNodeAction.setEnabled(true);
     }
 
     private void reloadTree(TreeNode treeNode, boolean collapseAll) {
