@@ -1,5 +1,6 @@
 package com.example.structuredtemplates.ui;
 
+import com.example.structuredtemplates.StructuredTemplatesBundle;
 import com.example.structuredtemplates.model.StructureEntry;
 import com.example.structuredtemplates.model.StructureEntryType;
 import com.example.structuredtemplates.model.StructureTemplate;
@@ -69,7 +70,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
     @Override
     public @Nls(capitalization = Nls.Capitalization.Title) String getDisplayName() {
-        return "Structured Templates";
+        return StructuredTemplatesBundle.message("configurable.displayName");
     }
 
     @Override
@@ -126,14 +127,14 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
     private JPanel createToolBar() {
         leftGroup = new DefaultActionGroup();
-        leftGroup.add(new ToolbarAction("Add Template", "Create a new template", AllIcons.Actions.AddList)
+        leftGroup.add(new ToolbarAction(StructuredTemplatesBundle.message("button.add.template"), "Create a new template", AllIcons.Actions.AddList)
                 .onClick(this::onAddTemplate));
         leftGroup.addSeparator();
-        addFolderAction = new ToolbarAction("Add Folder", "Create a new folder", AllIcons.Actions.NewFolder)
+        addFolderAction = new ToolbarAction(StructuredTemplatesBundle.message("button.add.folder"), "Create a new folder", AllIcons.Actions.NewFolder)
                 .onClick(this::onAddFolder);
-        addFileAction = new ToolbarAction("Add File", "Create a new file", AllIcons.Actions.AddFile)
+        addFileAction = new ToolbarAction(StructuredTemplatesBundle.message("button.add.file"), "Create a new file", AllIcons.Actions.AddFile)
                 .onClick(this::onAddFile);
-        removeNodeAction = new ToolbarAction("Delete Node", "Delete a node", AllIcons.General.Remove)
+        removeNodeAction = new ToolbarAction(StructuredTemplatesBundle.message("button.remove.node"), "Delete a node", AllIcons.General.Remove)
                 .onClick(this::onRemoveNode);
         leftGroup.add(addFolderAction);
         leftGroup.add(addFileAction);
@@ -144,9 +145,9 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         removeNodeAction.setEnabled(false);
 
         rightGroup = new DefaultActionGroup();
-        rightGroup.add(new ToolbarAction("Import Templates", "Import all templates", AllIcons.Actions.Download)
+        rightGroup.add(new ToolbarAction(StructuredTemplatesBundle.message("button.import"), "Import all templates", AllIcons.Actions.Download)
                 .onClick(this::onImportTemplates));
-        rightGroup.add(new ToolbarAction("Export Templates", "Export all templates", AllIcons.Actions.Upload)
+        rightGroup.add(new ToolbarAction(StructuredTemplatesBundle.message("button.export"), "Export all templates", AllIcons.Actions.Upload)
                 .onClick(this::onExportTemplates));
 
 
@@ -167,33 +168,33 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     private void installContextMenu() {
         JPopupMenu menu = new JPopupMenu();
 
-        JMenuItem renameItem = new JMenuItem("Rename");
+        JMenuItem renameItem = new JMenuItem(StructuredTemplatesBundle.message("menu.item.rename"));
         renameItem.addActionListener(e -> renameSelectedNode());
         menu.add(renameItem);
 
-        JMenuItem changeTemplateItem = new JMenuItem("Change File Template...");
+        JMenuItem changeTemplateItem = new JMenuItem(StructuredTemplatesBundle.message("menu.item.change.template"));
         changeTemplateItem.addActionListener(e -> changeTemplateForSelectedNode());
         menu.add(changeTemplateItem);
 
-        JMenuItem changeIconItem = new JMenuItem("Change Icon...");
+        JMenuItem changeIconItem = new JMenuItem(StructuredTemplatesBundle.message("menu.item.change.icon"));
         changeIconItem.addActionListener(e -> onChangeIcon());
         menu.add(changeIconItem);
 
-        JMenuItem removeItem = new JMenuItem("Remove");
+        JMenuItem removeItem = new JMenuItem(StructuredTemplatesBundle.message("menu.item.remove"));
         removeItem.addActionListener(e -> onRemoveNode());
         menu.add(removeItem);
 
         menu.addSeparator();
 
-        JMenuItem createNewTemplate = new JMenuItem("Create New Template");
+        JMenuItem createNewTemplate = new JMenuItem(StructuredTemplatesBundle.message("menu.item.create.template"));
         createNewTemplate.addActionListener(e -> onAddTemplate());
         menu.add(createNewTemplate);
 
-        JMenuItem addFolder = new JMenuItem("Add Folder");
+        JMenuItem addFolder = new JMenuItem(StructuredTemplatesBundle.message("button.add.folder"));
         addFolder.addActionListener(e -> onAddFolder());
         menu.add(addFolder);
 
-        JMenuItem addFile = new JMenuItem("Add File");
+        JMenuItem addFile = new JMenuItem(StructuredTemplatesBundle.message("button.add.file"));
         addFile.addActionListener(e -> onAddFile());
         menu.add(addFile);
 
