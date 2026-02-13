@@ -1,5 +1,6 @@
 package com.example.structuredtemplates.ui;
 
+import com.example.structuredtemplates.StructuredTemplatesBundle;
 import com.example.structuredtemplates.model.StructureEntry;
 import com.example.structuredtemplates.model.StructureEntryType;
 import com.example.structuredtemplates.model.StructureTemplate;
@@ -65,7 +66,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
     @Override
     public @Nls(capitalization = Nls.Capitalization.Title) String getDisplayName() {
-        return "Structured Templates";
+        return StructuredTemplatesBundle.message("configurable.displayName");
     }
 
     @Override
@@ -116,10 +117,10 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
 
-        addTemplateButton = new JButton("Add Template");
-        addFolderButton = new JButton("Add Folder");
-        addFileButton = new JButton("Add File");
-        removeNodeButton = new JButton("Remove Node");
+        addTemplateButton = new JButton(StructuredTemplatesBundle.message("button.add.template"));
+        addFolderButton = new JButton(StructuredTemplatesBundle.message("button.add.folder"));
+        addFileButton = new JButton(StructuredTemplatesBundle.message("button.add.file"));
+        removeNodeButton = new JButton(StructuredTemplatesBundle.message("button.remove.node"));
 
         addFolderButton.setEnabled(false);
         addFileButton.setEnabled(false);
@@ -135,8 +136,8 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
-        importTemplatesButton = new JButton("Import Templates...");
-        exportTemplatesButton = new JButton("Export Templates...");
+        importTemplatesButton = new JButton(StructuredTemplatesBundle.message("button.import"));
+        exportTemplatesButton = new JButton(StructuredTemplatesBundle.message("button.export"));
         topBar.add(importTemplatesButton);
         topBar.add(exportTemplatesButton);
 
@@ -152,33 +153,33 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     private void installContextMenu() {
         JPopupMenu menu = new JPopupMenu();
 
-        JMenuItem renameItem = new JMenuItem("Rename");
+        JMenuItem renameItem = new JMenuItem(StructuredTemplatesBundle.message("menu.item.rename"));
         renameItem.addActionListener(e -> renameSelectedNode());
         menu.add(renameItem);
 
-        JMenuItem changeTemplateItem = new JMenuItem("Change File Template...");
+        JMenuItem changeTemplateItem = new JMenuItem(StructuredTemplatesBundle.message("menu.item.change.template"));
         changeTemplateItem.addActionListener(e -> changeTemplateForSelectedNode());
         menu.add(changeTemplateItem);
 
-        JMenuItem changeIconItem = new JMenuItem("Change Icon...");
+        JMenuItem changeIconItem = new JMenuItem(StructuredTemplatesBundle.message("menu.item.change.icon"));
         changeIconItem.addActionListener(e -> onChangeIcon());
         menu.add(changeIconItem);
 
-        JMenuItem removeItem = new JMenuItem("Remove");
+        JMenuItem removeItem = new JMenuItem(StructuredTemplatesBundle.message("menu.item.remove"));
         removeItem.addActionListener(e -> onRemoveNode());
         menu.add(removeItem);
 
         menu.addSeparator();
 
-        JMenuItem createNewTemplate = new JMenuItem("Create New Template");
+        JMenuItem createNewTemplate = new JMenuItem(StructuredTemplatesBundle.message("menu.item.create.template"));
         createNewTemplate.addActionListener(e -> onAddTemplate());
         menu.add(createNewTemplate);
 
-        JMenuItem addFolder = new JMenuItem("Add Folder");
+        JMenuItem addFolder = new JMenuItem(StructuredTemplatesBundle.message("button.add.folder"));
         addFolder.addActionListener(e -> onAddFolder());
         menu.add(addFolder);
 
-        JMenuItem addFile = new JMenuItem("Add File");
+        JMenuItem addFile = new JMenuItem(StructuredTemplatesBundle.message("button.add.file"));
         addFile.addActionListener(e -> onAddFile());
         menu.add(addFile);
 

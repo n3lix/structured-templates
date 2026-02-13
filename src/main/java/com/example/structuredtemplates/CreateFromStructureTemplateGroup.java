@@ -1,5 +1,6 @@
 package com.example.structuredtemplates;
 
+import com.example.structuredtemplates.StructuredTemplatesBundle;
 import com.example.structuredtemplates.model.StructureTemplate;
 import com.example.structuredtemplates.settings.TemplateSettings;
 import com.example.structuredtemplates.util.IconUtils;
@@ -14,7 +15,7 @@ import java.util.List;
 public class CreateFromStructureTemplateGroup extends DefaultActionGroup {
 
     public CreateFromStructureTemplateGroup() {
-        super("Create From Structured Template", true); // popup = true
+        super(StructuredTemplatesBundle.message("action.com.example.structuredtemplates.CreateFromStructureTemplateGroup.text"), true); // popup = true
     }
 
     @Override

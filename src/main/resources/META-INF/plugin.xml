@@ -20,8 +20,8 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>Fixed an issue where updating a template did not refresh its associated icon.</li>
-        <li>Detect file entry icon when using templates from an older version.</li>
+        <li>Added a new Actions bar.</li>
+        <li>Fixed an issue when creating a file/folder while a file is selected.</li>
       </ul>
     ]]></change-notes>
 
@@ -29,21 +29,21 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
 
+    <resource-bundle>messages.messages</resource-bundle>
+
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
         <!-- Project-level settings page -->
         <projectConfigurable instance="com.example.structuredtemplates.ui.StructureTemplatesConfigurable"
                              id="com.example.structuredtemplates.StructureTemplatesConfigurable"
-                             displayName="Structured Templates"/>
+                             key="configurable.displayName"/>
     </extensions>
 
     <actions>
         <group
                 id="com.example.structuredtemplates.CreateFromStructureTemplateGroup"
                 class="com.example.structuredtemplates.CreateFromStructureTemplateGroup"
-                text="Create From Structured Template"
-                description="Generate folders/files from a structure template"
                 icon="/icons/action.svg"
                 popup="true">
             <add-to-group
