@@ -335,13 +335,14 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         StructureEntry folderEntry = new StructureEntry(name.trim(), StructureEntryType.FOLDER);
 
+        if (userObject instanceof StructureEntry entry && entry.getType() != StructureEntryType.FOLDER) {
+            selectedNode = (DefaultMutableTreeNode) selectedNode.getParent();
+            userObject = selectedNode.getUserObject();
+        }
+
         if (userObject instanceof StructureTemplate template) {
             template.addEntry(folderEntry);
-        } else {
-            StructureEntry parentEntry = (StructureEntry) userObject;
-            if (parentEntry.getType() != StructureEntryType.FOLDER) {
-                selectedNode = (DefaultMutableTreeNode) selectedNode.getParent(); // if selected node is file then create the file udner its parent.
-            }
+        } else if (userObject instanceof StructureEntry parentEntry) {
             parentEntry.addChild(folderEntry);
         }
 
@@ -361,8 +362,11 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         Object userObject = selectedNode.getUserObject();
         if (!(userObject instanceof StructureTemplate) && !(userObject instanceof StructureEntry)) {
             return; // unknown node
-        } else if (userObject instanceof StructureEntry parentEntry && parentEntry.getType() != StructureEntryType.FOLDER) {
-            selectedNode = (DefaultMutableTreeNode) selectedNode.getParent(); // if selected node is file then create the file udner its parent.
+        }
+
+        if (userObject instanceof StructureEntry entry && entry.getType() != StructureEntryType.FOLDER) {
+            selectedNode = (DefaultMutableTreeNode) selectedNode.getParent();
+            userObject = selectedNode.getUserObject();
         }
 
         String fileName = JOptionPane.showInputDialog(mainPanel, "File name:", "New File", JOptionPane.PLAIN_MESSAGE);
@@ -379,8 +383,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         if (userObject instanceof StructureTemplate template) {
             template.addEntry(fileEntry);
-        } else {
-            StructureEntry parentEntry = (StructureEntry) userObject;
+        } else if (userObject instanceof StructureEntry parentEntry) {
             parentEntry.addChild(fileEntry);
         }
 
@@ -475,6 +478,9 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         addFolderAction = null;
         addFileAction = null;
         removeNodeAction = null;
+        leftGroup = null;
+        rightGroup = null;
+        leftToolbar = null;
     }
 
     private void renameSelectedNode() {
