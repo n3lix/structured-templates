@@ -1,5 +1,6 @@
 package com.example.structuredtemplates;
 
+import com.example.structuredtemplates.StructuredTemplatesBundle;
 import com.example.structuredtemplates.model.StructureTemplate;
 import com.example.structuredtemplates.settings.TemplateSettings;
 import com.example.structuredtemplates.generator.StructureTemplateGenerator;
@@ -29,7 +30,7 @@ public class CreateFromStructureTemplateAction extends AnAction {
 
         VirtualFile targetDir = getTargetDirectory(e);
         if (targetDir == null) {
-            Messages.showErrorDialog(project, "No directory selected.", "Error");
+            Messages.showErrorDialog(project, StructuredTemplatesBundle.message("action.error.no.directory"), StructuredTemplatesBundle.message("dialog.title.error"));
             return;
         }
 
@@ -41,14 +42,14 @@ public class CreateFromStructureTemplateAction extends AnAction {
                 .orElse(null);
 
         if (template == null) {
-            Messages.showErrorDialog(project, "Template not found.", "Error");
+            Messages.showErrorDialog(project, StructuredTemplatesBundle.message("action.error.template.not.found"), StructuredTemplatesBundle.message("dialog.title.error"));
             return;
         }
 
         String name = Messages.showInputDialog(
                 project,
-                "Enter name for the new " + templateName + ":",
-                templateName + " Name",
+                StructuredTemplatesBundle.message("action.input.enter.name", templateName),
+                StructuredTemplatesBundle.message("action.input.title", templateName),
                 Messages.getQuestionIcon()
         );
 
