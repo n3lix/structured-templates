@@ -18,6 +18,7 @@ import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.JBColor;
+import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -27,6 +28,7 @@ import com.intellij.openapi.ui.DialogBuilder;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.JBSplitter;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
@@ -58,6 +60,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     private ToolbarAction removeNodeAction;
     private ActionToolbar leftToolbar;
     private List<StructureTemplate> workingTemplates;
+    private JPanel detailsPanel;
 
     public StructureTemplatesConfigurable(Project project) {
         this.project = project;
@@ -78,7 +81,13 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         mainPanel = new JPanel(new BorderLayout());
 
         mainPanel.add(createToolBar(), BorderLayout.NORTH);
-        mainPanel.add(createTree(), BorderLayout.CENTER);
+
+        JBSplitter splitter = new JBSplitter(false, 0.75f);
+        splitter.setHonorComponentsMinimumSize(false);
+        splitter.setFirstComponent(createTree());
+        splitter.setSecondComponent(createDetailsPanel());
+
+        mainPanel.add(splitter, BorderLayout.CENTER);
 
         initData();
         tree.addTreeSelectionListener(e -> onTreeNodeSelection());
@@ -547,6 +556,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         leftGroup = null;
         rightGroup = null;
         leftToolbar = null;
+        detailsPanel = null;
     }
 
     private void renameSelectedNode() {
@@ -683,6 +693,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             addFolderAction.setEnabled(false);
             addFileAction.setEnabled(false);
             removeNodeAction.setEnabled(false);
+            updateDetailsPanel(null);
             return;
         }
 
@@ -692,12 +703,98 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             addFolderAction.setEnabled(false);
             addFileAction.setEnabled(false);
             removeNodeAction.setEnabled(false);
+            updateDetailsPanel(null);
             return;
         }
 
         addFolderAction.setEnabled(true);
         addFileAction.setEnabled(true);
         removeNodeAction.setEnabled(true);
+        updateDetailsPanel(userObject);
+    }
+
+    private JComponent createDetailsPanel() {
+        detailsPanel = new JPanel(new BorderLayout());
+        detailsPanel.setBorder(JBUI.Borders.empty(10));
+        updateDetailsPanel(null);
+
+        JBScrollPane scrollPane = new JBScrollPane(detailsPanel);
+        scrollPane.setBorder(JBUI.Borders.empty());
+        return scrollPane;
+    }
+
+    private void updateDetailsPanel(@Nullable Object userObject) {
+        detailsPanel.removeAll();
+        if (userObject == null) {
+            JBLabel label = new JBLabel("Select an item to see its settings", SwingConstants.CENTER);
+            label.setForeground(JBColor.GRAY);
+            detailsPanel.add(label, BorderLayout.CENTER);
+        } else {
+            FormBuilder formBuilder = FormBuilder.createFormBuilder();
+
+            String name = "";
+            Icon icon = null;
+
+            if (userObject instanceof StructureTemplate template) {
+                name = template.getName();
+                icon = IconUtils.getIconByPath(template.getIconPath());
+
+                JBLabel nameLabel = new JBLabel(name, icon, SwingConstants.LEFT);
+                nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
+                formBuilder.addComponent(nameLabel);
+                formBuilder.addVerticalGap(10);
+
+                formBuilder.addLabeledComponent("Icon Path:", new JBLabel(template.getIconPath() != null ? template.getIconPath() : "None"));
+            } else if (userObject instanceof StructureEntry entry) {
+                name = entry.getName();
+                if (entry.getType() == StructureEntryType.FOLDER) {
+                    icon = AllIcons.Nodes.Folder;
+                } else {
+                    icon = AllIcons.FileTypes.Any_type;
+                }
+
+                JBLabel nameLabel = new JBLabel(name, icon, SwingConstants.LEFT);
+                nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
+                formBuilder.addComponent(nameLabel);
+                formBuilder.addVerticalGap(10);
+
+                if (entry.getType() == StructureEntryType.FILE) {
+                    String templateName = entry.getFileTemplateName();
+                    String extension = entry.getExtension();
+
+                    JBLabel templateValue = new JBLabel(templateName != null && !templateName.isEmpty() ? templateName : "None");
+                    JBLabel extensionValue = new JBLabel(extension != null && !extension.isEmpty() ? extension : "None");
+
+                    formBuilder.addLabeledComponent("File Template:", templateValue);
+                    formBuilder.addLabeledComponent("Extension:", extensionValue);
+
+                    JButton changeButton = new JButton("Change File Template…");
+                    changeButton.addActionListener(e -> {
+                        FileTemplate newTemplate = chooseFileTemplateName();
+                        if (newTemplate != null) {
+                            entry.setFileTemplateName(newTemplate.getName());
+                            entry.setExtension(newTemplate.getExtension());
+
+                            DefaultMutableTreeNode selectedNode = getSelectedNode();
+                            if (selectedNode != null) {
+                                treeModel.nodeChanged(selectedNode);
+                            } else {
+                                treeModel.reload();
+                            }
+                            updateDetailsPanel(entry);
+                        }
+                    });
+                    formBuilder.addComponent(changeButton);
+                } else {
+                    formBuilder.addComponent(new JBLabel("No additional settings for this item."));
+                }
+            }
+
+            JPanel settingsPanel = formBuilder.getPanel();
+            detailsPanel.add(settingsPanel, BorderLayout.NORTH);
+        }
+        detailsPanel.revalidate();
+        detailsPanel.repaint();
     }
 
     private void reloadTree(TreeNode treeNode, boolean collapseAll) {
