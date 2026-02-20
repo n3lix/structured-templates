@@ -41,6 +41,7 @@ public final class TemplateSettings implements PersistentStateComponent<Template
         public String type; // FOLDER or FILE
         public String fileTemplateName;
         public String extension;
+        public java.util.Map<String, String> customVariables = new java.util.LinkedHashMap<>();
         public List<EntryState> children = new ArrayList<>();
     }
 
@@ -132,6 +133,7 @@ public final class TemplateSettings implements PersistentStateComponent<Template
         es.type = entry.getType().name();
         es.fileTemplateName = entry.getFileTemplateName();
         es.extension = entry.getExtension();
+        es.customVariables = new java.util.LinkedHashMap<>(entry.getCustomVariables());
         if (entry.getChildren() != null) {
             for (StructureEntry child : entry.getChildren()) {
                 es.children.add(toEntryState(child));
@@ -145,6 +147,9 @@ public final class TemplateSettings implements PersistentStateComponent<Template
         StructureEntry entry;
         if (type == StructureEntryType.FILE) {
             entry = new StructureEntry(es.name, es.fileTemplateName, es.extension);
+            if (es.customVariables != null) {
+                entry.getCustomVariables().putAll(es.customVariables);
+            }
         } else {
             entry = new StructureEntry(es.name, type);
         }

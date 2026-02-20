@@ -66,7 +66,7 @@ public class StructureTemplateGenerator {
 
     private void createEntry(StructureEntry entry, VirtualFile parent, String rootName) {
         try {
-            String resolvedName = resolveNamePlaceholders(entry.getName(), rootName);
+            String resolvedName = resolveNamePlaceholders(entry.getName(), rootName, entry);
 
             if (entry.getType() == StructureEntryType.FOLDER) {
                 VirtualFile folder = parent.findChild(resolvedName);
@@ -89,6 +89,9 @@ public class StructureTemplateGenerator {
                 props.setProperty("FILE_NAME_CAMEL", toCamelCase(rootName));
                 props.setProperty("FILE_NAME_PASCAL", toPascalCase(rootName));
                 props.setProperty("FILE_NAME_KEBAB", toKebabCase(rootName));
+
+                // Add custom variables
+                entry.getCustomVariables().forEach(props::setProperty);
 
                 String content = template.getText(props);
 
@@ -133,7 +136,7 @@ public class StructureTemplateGenerator {
         }
     }
 
-    private String resolveNamePlaceholders(String raw, String rootName) {
+    private String resolveNamePlaceholders(String raw, String rootName, StructureEntry entry) {
         if (raw == null) return null;
 
         String result = raw;
@@ -152,6 +155,16 @@ public class StructureTemplateGenerator {
 
         if (result.contains("${FILE_NAME}")) {
             result = result.replace("${FILE_NAME}", rootName);
+        }
+
+        // Resolve custom variables in filename
+        if (entry != null) {
+            for (java.util.Map.Entry<String, String> varEntry : entry.getCustomVariables().entrySet()) {
+                String placeholder = "${" + varEntry.getKey() + "}";
+                if (result.contains(placeholder)) {
+                    result = result.replace(placeholder, varEntry.getValue());
+                }
+            }
         }
 
         return result;

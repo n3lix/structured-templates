@@ -821,6 +821,8 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
                         }
                     });
                     formBuilder.addComponent(changeButton);
+
+                    addCustomVariablesSection(formBuilder, entry);
                 } else {
                     formBuilder.addComponent(new JBLabel("No additional settings for this item."));
                 }
@@ -831,6 +833,64 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         }
         detailsPanel.revalidate();
         detailsPanel.repaint();
+    }
+
+    private void addCustomVariablesSection(FormBuilder formBuilder, StructureEntry entry) {
+        formBuilder.addVerticalGap(10);
+        formBuilder.addSeparator();
+        formBuilder.addVerticalGap(10);
+        formBuilder.addComponent(new JBLabel("Custom Variables:"));
+        formBuilder.addVerticalGap(5);
+
+        for (java.util.Map.Entry<String, String> varEntry : entry.getCustomVariables().entrySet()) {
+            String key = varEntry.getKey();
+            String value = varEntry.getValue();
+
+            JTextField nameField = new JTextField(key);
+            JTextField valueField = new JTextField(value);
+            JButton removeButton = new JButton(AllIcons.General.Remove);
+            removeButton.setToolTipText("Remove variable");
+
+            JPanel row = new JPanel(new BorderLayout(5, 0));
+            JPanel fields = new JPanel(new GridLayout(1, 2, 5, 0));
+            fields.add(nameField);
+            fields.add(valueField);
+            row.add(fields, BorderLayout.CENTER);
+            row.add(removeButton, BorderLayout.EAST);
+            formBuilder.addComponent(row);
+
+            nameField.addFocusListener(new java.awt.event.FocusAdapter() {
+                @Override
+                public void focusLost(java.awt.event.FocusEvent e) {
+                    String newKey = nameField.getText().trim();
+                    if (!newKey.isEmpty() && !newKey.equals(key)) {
+                        String val = entry.getCustomVariables().remove(key);
+                        entry.getCustomVariables().put(newKey, val);
+                        updateDetailsPanel(entry);
+                    }
+                }
+            });
+
+            valueField.addFocusListener(new java.awt.event.FocusAdapter() {
+                @Override
+                public void focusLost(java.awt.event.FocusEvent e) {
+                    entry.getCustomVariables().put(key, valueField.getText());
+                }
+            });
+
+            removeButton.addActionListener(e -> {
+                entry.getCustomVariables().remove(key);
+                updateDetailsPanel(entry);
+            });
+        }
+
+        JButton addButton = new JButton("Add Variable", AllIcons.General.Add);
+        addButton.addActionListener(e -> {
+            String newKey = "VAR_" + (entry.getCustomVariables().size() + 1);
+            entry.getCustomVariables().put(newKey, "value");
+            updateDetailsPanel(entry);
+        });
+        formBuilder.addComponent(addButton);
     }
 
     private void reloadTree(TreeNode treeNode, boolean collapseAll) {
