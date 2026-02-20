@@ -11,6 +11,8 @@ import com.example.structuredtemplates.util.TemplateImportExportManager;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.fileTemplates.FileTemplate;
 import com.intellij.ide.fileTemplates.FileTemplateManager;
+import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
@@ -723,6 +725,44 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         return scrollPane;
     }
 
+    private Icon getIconForEntry(StructureEntry entry) {
+        if (entry.getType() == StructureEntryType.FOLDER) {
+            return AllIcons.Nodes.Folder;
+        } else {
+            String ext = entry.getExtension();
+
+            if (ext != null && !ext.isEmpty()) {
+                FileType fileType = FileTypeManager.getInstance().getFileTypeByExtension(ext);
+                return fileType.getIcon();
+            } else {
+                //if the entry doesn't have an extension (old version of the plugin) try to detect it from File Template
+                FileTemplateManager manager = FileTemplateManager.getInstance(project);
+                FileTemplate[] templates = manager.getTemplates(FileTemplateManager.DEFAULT_TEMPLATES_CATEGORY);
+
+                FileTemplate matched = null;
+                for (FileTemplate t : templates) {
+                    if (t.getName().equals(entry.getFileTemplateName())) {
+                        matched = t;
+                        break;
+                    }
+                }
+
+                if (matched != null) {
+                    String templateExt = matched.getExtension();
+                    if (!templateExt.isEmpty()) {
+                        FileType fileType = FileTypeManager.getInstance().getFileTypeByExtension(templateExt);
+                        if (fileType.getIcon() != null) {
+                            return fileType.getIcon();
+                        }
+                    }
+                }
+
+                //fallback to Text icon if nothing matched
+                return AllIcons.FileTypes.Text;
+            }
+        }
+    }
+
     private void updateDetailsPanel(@Nullable Object userObject) {
         detailsPanel.removeAll();
         if (userObject == null) {
@@ -747,11 +787,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
                 formBuilder.addLabeledComponent("Icon Path:", new JBLabel(template.getIconPath() != null ? template.getIconPath() : "None"));
             } else if (userObject instanceof StructureEntry entry) {
                 name = entry.getName();
-                if (entry.getType() == StructureEntryType.FOLDER) {
-                    icon = AllIcons.Nodes.Folder;
-                } else {
-                    icon = AllIcons.FileTypes.Any_type;
-                }
+                icon = getIconForEntry(entry);
 
                 JBLabel nameLabel = new JBLabel(name, icon, SwingConstants.LEFT);
                 nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
