@@ -761,6 +761,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
                 if (matched != null) {
                     String templateExt = matched.getExtension();
                     if (!templateExt.isEmpty()) {
+                        entry.setExtension(templateExt); // set the extension to match the template
                         FileType fileType = FileTypeManager.getInstance().getFileTypeByExtension(templateExt);
                         if (fileType.getIcon() != null) {
                             return fileType.getIcon();

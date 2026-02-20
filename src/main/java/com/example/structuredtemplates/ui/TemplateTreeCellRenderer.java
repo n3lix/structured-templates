@@ -26,14 +26,12 @@ public class TemplateTreeCellRenderer extends ColoredTreeCellRenderer {
 
     @Override
     public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-        if (value instanceof DefaultMutableTreeNode) {
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
+        if (value instanceof DefaultMutableTreeNode node) {
             Object userObject = node.getUserObject();
             if (node.isRoot()) {
                 append(userObject != null ? userObject.toString() : "");
                 setIcon(AllIcons.Nodes.ConfigFolder);
-            } else if (userObject instanceof StructureTemplate) {
-                StructureTemplate st = (StructureTemplate) userObject;
+            } else if (userObject instanceof StructureTemplate st) {
                 append(st.getName() != null ? st.getName() : "");
                 Icon icon = IconUtils.getIconByPath(st.getIconPath());
                 if (icon != null) {
@@ -41,8 +39,7 @@ public class TemplateTreeCellRenderer extends ColoredTreeCellRenderer {
                 } else {
                     setIcon(AllIcons.Nodes.ModuleGroup);
                 }
-            } else if (userObject instanceof StructureEntry) {
-                StructureEntry se = (StructureEntry) userObject;
+            } else if (userObject instanceof StructureEntry se) {
                 append(se.getName() != null ? se.getName() : "");
                 if (se.getType() == StructureEntryType.FILE && se.getFileTemplateName() != null) {
                     append(" (" + se.getFileTemplateName() + ")", SimpleTextAttributes.GRAYED_ATTRIBUTES);
@@ -73,6 +70,7 @@ public class TemplateTreeCellRenderer extends ColoredTreeCellRenderer {
                         if (matched != null) {
                             String templateExt = matched.getExtension();
                             if (!templateExt.isEmpty()) {
+                                se.setExtension(templateExt); // set the extension to match the template
                                 FileType fileType = FileTypeManager.getInstance().getFileTypeByExtension(templateExt);
                                 if (fileType.getIcon() != null) {
                                     setIcon(fileType.getIcon());
