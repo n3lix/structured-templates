@@ -772,8 +772,8 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         } else {
             FormBuilder formBuilder = FormBuilder.createFormBuilder();
 
-            String name = "";
-            Icon icon = null;
+            String name;
+            Icon icon;
 
             if (userObject instanceof StructureTemplate template) {
                 name = template.getName();
@@ -784,7 +784,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
                 formBuilder.addComponent(nameLabel);
                 formBuilder.addVerticalGap(10);
 
-                formBuilder.addLabeledComponent("Icon Path:", new JBLabel(template.getIconPath() != null ? template.getIconPath() : "None"));
+                formBuilder.addLabeledComponent("Icon path:", new JBLabel(template.getIconPath() != null ? template.getIconPath() : "None"));
             } else if (userObject instanceof StructureEntry entry) {
                 name = entry.getName();
                 icon = getIconForEntry(entry);

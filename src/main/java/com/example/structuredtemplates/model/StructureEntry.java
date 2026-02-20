@@ -84,8 +84,7 @@ public class StructureEntry {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof StructureEntry)) return false;
-        StructureEntry that = (StructureEntry) o;
+        if (!(o instanceof StructureEntry that)) return false;
         return Objects.equals(name, that.name)
                 && type == that.type
                 && Objects.equals(fileTemplateName, that.fileTemplateName)

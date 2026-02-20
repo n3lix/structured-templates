@@ -20,8 +20,9 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>Added a new Actions bar.</li>
-        <li>Fixed an issue when creating a file/folder while a file is selected.</li>
+        <li>Introduced a new <b>Details Panel</b> that shows additional information for the selected tree item.</li>
+        <li>Introduced support for <b>custom variables</b> within File Templates, allowing more flexible and dynamic template generation.</li>
+        <li>Improved the template tree with alphabetical sorting and a clearer hierarchy where <b>folders are listed before files</b>.</li>
       </ul>
     ]]></change-notes>
 
