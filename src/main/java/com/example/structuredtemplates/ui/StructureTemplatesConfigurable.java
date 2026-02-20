@@ -233,12 +233,21 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         rebuildTree();
     }
 
+    private int compareEntries(StructureEntry e1, StructureEntry e2) {
+        if (e1.getType() != e2.getType()) {
+            return e1.getType() == StructureEntryType.FOLDER ? -1 : 1;
+        }
+        return e1.getName().compareToIgnoreCase(e2.getName());
+    }
+
     private void rebuildTree() {
         rootNode.removeAllChildren();
         if (workingTemplates != null) {
+            workingTemplates.sort((t1, t2) -> t1.getName().compareToIgnoreCase(t2.getName()));
             for (StructureTemplate template : workingTemplates) {
                 DefaultMutableTreeNode templateNode = new DefaultMutableTreeNode(template);
                 rootNode.add(templateNode);
+                template.getEntries().sort(this::compareEntries);
                 for (StructureEntry entry : template.getEntries()) {
                     templateNode.add(buildNode(entry));
                 }
@@ -251,11 +260,52 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     private DefaultMutableTreeNode buildNode(StructureEntry entry) {
         DefaultMutableTreeNode node = new DefaultMutableTreeNode(entry);
         if (entry.getType() == StructureEntryType.FOLDER) {
+            entry.getChildren().sort(this::compareEntries);
             for (StructureEntry child : entry.getChildren()) {
                 node.add(buildNode(child));
             }
         }
         return node;
+    }
+
+    private void refreshNodeChildren(DefaultMutableTreeNode node) {
+        if (node.getChildCount() <= 1) {
+            reloadTree(node, false);
+            return;
+        }
+
+        List<DefaultMutableTreeNode> children = new ArrayList<>();
+        for (int i = 0; i < node.getChildCount(); i++) {
+            children.add((DefaultMutableTreeNode) node.getChildAt(i));
+        }
+
+        children.sort((n1, n2) -> {
+            Object o1 = n1.getUserObject();
+            Object o2 = n2.getUserObject();
+            if (o1 instanceof StructureEntry e1 && o2 instanceof StructureEntry e2) {
+                return compareEntries(e1, e2);
+            }
+            if (o1 instanceof StructureTemplate t1 && o2 instanceof StructureTemplate t2) {
+                return t1.getName().compareToIgnoreCase(t2.getName());
+            }
+            return 0;
+        });
+
+        node.removeAllChildren();
+        for (DefaultMutableTreeNode child : children) {
+            node.add(child);
+        }
+        reloadTree(node, false);
+    }
+
+    private DefaultMutableTreeNode findNodeByUserObject(DefaultMutableTreeNode parent, Object userObject) {
+        for (int i = 0; i < parent.getChildCount(); i++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) parent.getChildAt(i);
+            if (child.getUserObject() == userObject) {
+                return child;
+            }
+        }
+        return null;
     }
 
     private void onChangeIcon() {
@@ -312,9 +362,12 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         DefaultMutableTreeNode templateNode = new DefaultMutableTreeNode(template);
         rootNode.add(templateNode);
-        reloadTree(rootNode, false);
+        refreshNodeChildren(rootNode);
 
-        tree.scrollPathToVisible(new TreePath(templateNode.getPath()));
+        templateNode = findNodeByUserObject(rootNode, template);
+        if (templateNode != null) {
+            tree.scrollPathToVisible(new TreePath(templateNode.getPath()));
+        }
     }
 
     private void onAddFolder() {
@@ -343,14 +396,20 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         if (userObject instanceof StructureTemplate template) {
             template.addEntry(folderEntry);
+            template.getEntries().sort(this::compareEntries);
         } else if (userObject instanceof StructureEntry parentEntry) {
             parentEntry.addChild(folderEntry);
+            parentEntry.getChildren().sort(this::compareEntries);
         }
 
         DefaultMutableTreeNode folderNode = new DefaultMutableTreeNode(folderEntry);
         selectedNode.add(folderNode);
-        treeModel.reload(selectedNode);
-        tree.scrollPathToVisible(new TreePath(folderNode.getPath()));
+        refreshNodeChildren(selectedNode);
+
+        folderNode = findNodeByUserObject(selectedNode, folderEntry);
+        if (folderNode != null) {
+            tree.scrollPathToVisible(new TreePath(folderNode.getPath()));
+        }
     }
 
     private void onAddFile() {
@@ -384,14 +443,20 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         if (userObject instanceof StructureTemplate template) {
             template.addEntry(fileEntry);
+            template.getEntries().sort(this::compareEntries);
         } else if (userObject instanceof StructureEntry parentEntry) {
             parentEntry.addChild(fileEntry);
+            parentEntry.getChildren().sort(this::compareEntries);
         }
 
         DefaultMutableTreeNode fileNode = new DefaultMutableTreeNode(fileEntry);
         selectedNode.add(fileNode);
-        treeModel.reload(selectedNode);
-        tree.scrollPathToVisible(new TreePath(fileNode.getPath()));
+        refreshNodeChildren(selectedNode);
+
+        fileNode = findNodeByUserObject(selectedNode, fileEntry);
+        if (fileNode != null) {
+            tree.scrollPathToVisible(new TreePath(fileNode.getPath()));
+        }
     }
 
     private FileTemplate chooseFileTemplateName() {
@@ -511,11 +576,25 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         if (obj instanceof StructureTemplate) {
             ((StructureTemplate) obj).setName(newName);
+            workingTemplates.sort((t1, t2) -> t1.getName().compareToIgnoreCase(t2.getName()));
         } else if (obj instanceof StructureEntry) {
             ((StructureEntry) obj).setName(newName);
+            DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
+            if (parentNode != null) {
+                Object parentObj = parentNode.getUserObject();
+                if (parentObj instanceof StructureTemplate template) {
+                    template.getEntries().sort(this::compareEntries);
+                } else if (parentObj instanceof StructureEntry entry) {
+                    entry.getChildren().sort(this::compareEntries);
+                }
+            }
         }
 
         treeModel.nodeChanged(node);
+        DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
+        if (parentNode != null) {
+            refreshNodeChildren(parentNode);
+        }
     }
 
     private void changeTemplateForSelectedNode() {
