@@ -10,6 +10,7 @@ public class StructureEntry {
     private StructureEntryType type;
     private String fileTemplateName;
     private String extension;
+    private java.util.Map<String, String> customVariables = new java.util.LinkedHashMap<>();
     private final List<StructureEntry> children = new ArrayList<>();
 
     public StructureEntry(String name, StructureEntryType type) {
@@ -52,6 +53,14 @@ public class StructureEntry {
         this.fileTemplateName = fileTemplateName;
     }
 
+    public java.util.Map<String, String> getCustomVariables() {
+        return customVariables;
+    }
+
+    public void setCustomVariables(java.util.Map<String, String> customVariables) {
+        this.customVariables = customVariables;
+    }
+
     public List<StructureEntry> getChildren() {
         return children;
     }
@@ -75,16 +84,16 @@ public class StructureEntry {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof StructureEntry)) return false;
-        StructureEntry that = (StructureEntry) o;
+        if (!(o instanceof StructureEntry that)) return false;
         return Objects.equals(name, that.name)
                 && type == that.type
                 && Objects.equals(fileTemplateName, that.fileTemplateName)
+                && Objects.equals(customVariables, that.customVariables)
                 && Objects.equals(children, that.children);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, fileTemplateName, children);
+        return Objects.hash(name, type, fileTemplateName, customVariables, children);
     }
 }

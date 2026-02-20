@@ -11,6 +11,8 @@ import com.example.structuredtemplates.util.TemplateImportExportManager;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.fileTemplates.FileTemplate;
 import com.intellij.ide.fileTemplates.FileTemplateManager;
+import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
@@ -18,6 +20,7 @@ import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.JBColor;
+import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -27,6 +30,7 @@ import com.intellij.openapi.ui.DialogBuilder;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.JBSplitter;
 import com.intellij.ui.TreeSpeedSearch;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
@@ -58,6 +62,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     private ToolbarAction removeNodeAction;
     private ActionToolbar leftToolbar;
     private List<StructureTemplate> workingTemplates;
+    private JPanel detailsPanel;
 
     public StructureTemplatesConfigurable(Project project) {
         this.project = project;
@@ -77,8 +82,25 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     public @Nullable JComponent createComponent() {
         mainPanel = new JPanel(new BorderLayout());
 
-        mainPanel.add(createToolBar(), BorderLayout.NORTH);
-        mainPanel.add(createTree(), BorderLayout.CENTER);
+        JPanel toolbarPanel = createToolBar();
+        JPanel treePanel = new JPanel(new BorderLayout());
+        treePanel.add(toolbarPanel, BorderLayout.NORTH);
+        treePanel.add(createTree(), BorderLayout.CENTER);
+
+        JPanel detailsHeader = new JPanel();
+        detailsHeader.setBorder(JBUI.Borders.customLine(JBColor.border(), 0, 0, 1, 0));
+        detailsHeader.setPreferredSize(new Dimension(0, toolbarPanel.getPreferredSize().height));
+
+        JPanel detailsPanelWrapper = new JPanel(new BorderLayout());
+        detailsPanelWrapper.add(detailsHeader, BorderLayout.NORTH);
+        detailsPanelWrapper.add(createDetailsPanel(), BorderLayout.CENTER);
+
+        JBSplitter splitter = new JBSplitter(false, 0.75f);
+        splitter.setHonorComponentsMinimumSize(false);
+        splitter.setFirstComponent(treePanel);
+        splitter.setSecondComponent(detailsPanelWrapper);
+
+        mainPanel.add(splitter, BorderLayout.CENTER);
 
         initData();
         tree.addTreeSelectionListener(e -> onTreeNodeSelection());
@@ -233,12 +255,21 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         rebuildTree();
     }
 
+    private int compareEntries(StructureEntry e1, StructureEntry e2) {
+        if (e1.getType() != e2.getType()) {
+            return e1.getType() == StructureEntryType.FOLDER ? -1 : 1;
+        }
+        return e1.getName().compareToIgnoreCase(e2.getName());
+    }
+
     private void rebuildTree() {
         rootNode.removeAllChildren();
         if (workingTemplates != null) {
+            workingTemplates.sort((t1, t2) -> t1.getName().compareToIgnoreCase(t2.getName()));
             for (StructureTemplate template : workingTemplates) {
                 DefaultMutableTreeNode templateNode = new DefaultMutableTreeNode(template);
                 rootNode.add(templateNode);
+                template.getEntries().sort(this::compareEntries);
                 for (StructureEntry entry : template.getEntries()) {
                     templateNode.add(buildNode(entry));
                 }
@@ -251,11 +282,52 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     private DefaultMutableTreeNode buildNode(StructureEntry entry) {
         DefaultMutableTreeNode node = new DefaultMutableTreeNode(entry);
         if (entry.getType() == StructureEntryType.FOLDER) {
+            entry.getChildren().sort(this::compareEntries);
             for (StructureEntry child : entry.getChildren()) {
                 node.add(buildNode(child));
             }
         }
         return node;
+    }
+
+    private void refreshNodeChildren(DefaultMutableTreeNode node) {
+        if (node.getChildCount() <= 1) {
+            reloadTree(node, false);
+            return;
+        }
+
+        List<DefaultMutableTreeNode> children = new ArrayList<>();
+        for (int i = 0; i < node.getChildCount(); i++) {
+            children.add((DefaultMutableTreeNode) node.getChildAt(i));
+        }
+
+        children.sort((n1, n2) -> {
+            Object o1 = n1.getUserObject();
+            Object o2 = n2.getUserObject();
+            if (o1 instanceof StructureEntry e1 && o2 instanceof StructureEntry e2) {
+                return compareEntries(e1, e2);
+            }
+            if (o1 instanceof StructureTemplate t1 && o2 instanceof StructureTemplate t2) {
+                return t1.getName().compareToIgnoreCase(t2.getName());
+            }
+            return 0;
+        });
+
+        node.removeAllChildren();
+        for (DefaultMutableTreeNode child : children) {
+            node.add(child);
+        }
+        reloadTree(node, false);
+    }
+
+    private DefaultMutableTreeNode findNodeByUserObject(DefaultMutableTreeNode parent, Object userObject) {
+        for (int i = 0; i < parent.getChildCount(); i++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) parent.getChildAt(i);
+            if (child.getUserObject() == userObject) {
+                return child;
+            }
+        }
+        return null;
     }
 
     private void onChangeIcon() {
@@ -312,9 +384,12 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         DefaultMutableTreeNode templateNode = new DefaultMutableTreeNode(template);
         rootNode.add(templateNode);
-        reloadTree(rootNode, false);
+        refreshNodeChildren(rootNode);
 
-        tree.scrollPathToVisible(new TreePath(templateNode.getPath()));
+        templateNode = findNodeByUserObject(rootNode, template);
+        if (templateNode != null) {
+            tree.scrollPathToVisible(new TreePath(templateNode.getPath()));
+        }
     }
 
     private void onAddFolder() {
@@ -343,14 +418,20 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         if (userObject instanceof StructureTemplate template) {
             template.addEntry(folderEntry);
+            template.getEntries().sort(this::compareEntries);
         } else if (userObject instanceof StructureEntry parentEntry) {
             parentEntry.addChild(folderEntry);
+            parentEntry.getChildren().sort(this::compareEntries);
         }
 
         DefaultMutableTreeNode folderNode = new DefaultMutableTreeNode(folderEntry);
         selectedNode.add(folderNode);
-        treeModel.reload(selectedNode);
-        tree.scrollPathToVisible(new TreePath(folderNode.getPath()));
+        refreshNodeChildren(selectedNode);
+
+        folderNode = findNodeByUserObject(selectedNode, folderEntry);
+        if (folderNode != null) {
+            tree.scrollPathToVisible(new TreePath(folderNode.getPath()));
+        }
     }
 
     private void onAddFile() {
@@ -384,14 +465,20 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         if (userObject instanceof StructureTemplate template) {
             template.addEntry(fileEntry);
+            template.getEntries().sort(this::compareEntries);
         } else if (userObject instanceof StructureEntry parentEntry) {
             parentEntry.addChild(fileEntry);
+            parentEntry.getChildren().sort(this::compareEntries);
         }
 
         DefaultMutableTreeNode fileNode = new DefaultMutableTreeNode(fileEntry);
         selectedNode.add(fileNode);
-        treeModel.reload(selectedNode);
-        tree.scrollPathToVisible(new TreePath(fileNode.getPath()));
+        refreshNodeChildren(selectedNode);
+
+        fileNode = findNodeByUserObject(selectedNode, fileEntry);
+        if (fileNode != null) {
+            tree.scrollPathToVisible(new TreePath(fileNode.getPath()));
+        }
     }
 
     private FileTemplate chooseFileTemplateName() {
@@ -482,6 +569,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
         leftGroup = null;
         rightGroup = null;
         leftToolbar = null;
+        detailsPanel = null;
     }
 
     private void renameSelectedNode() {
@@ -511,11 +599,25 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
 
         if (obj instanceof StructureTemplate) {
             ((StructureTemplate) obj).setName(newName);
+            workingTemplates.sort((t1, t2) -> t1.getName().compareToIgnoreCase(t2.getName()));
         } else if (obj instanceof StructureEntry) {
             ((StructureEntry) obj).setName(newName);
+            DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
+            if (parentNode != null) {
+                Object parentObj = parentNode.getUserObject();
+                if (parentObj instanceof StructureTemplate template) {
+                    template.getEntries().sort(this::compareEntries);
+                } else if (parentObj instanceof StructureEntry entry) {
+                    entry.getChildren().sort(this::compareEntries);
+                }
+            }
         }
 
         treeModel.nodeChanged(node);
+        DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
+        if (parentNode != null) {
+            refreshNodeChildren(parentNode);
+        }
     }
 
     private void changeTemplateForSelectedNode() {
@@ -604,6 +706,7 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             addFolderAction.setEnabled(false);
             addFileAction.setEnabled(false);
             removeNodeAction.setEnabled(false);
+            updateDetailsPanel(null);
             return;
         }
 
@@ -613,12 +716,192 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
             addFolderAction.setEnabled(false);
             addFileAction.setEnabled(false);
             removeNodeAction.setEnabled(false);
+            updateDetailsPanel(null);
             return;
         }
 
         addFolderAction.setEnabled(true);
         addFileAction.setEnabled(true);
         removeNodeAction.setEnabled(true);
+        updateDetailsPanel(userObject);
+    }
+
+    private JComponent createDetailsPanel() {
+        detailsPanel = new JPanel(new BorderLayout());
+        detailsPanel.setBorder(JBUI.Borders.empty(10));
+        updateDetailsPanel(null);
+
+        JBScrollPane scrollPane = new JBScrollPane(detailsPanel);
+        scrollPane.setBorder(JBUI.Borders.empty());
+        return scrollPane;
+    }
+
+    private Icon getIconForEntry(StructureEntry entry) {
+        if (entry.getType() == StructureEntryType.FOLDER) {
+            return AllIcons.Nodes.Folder;
+        } else {
+            String ext = entry.getExtension();
+
+            if (ext != null && !ext.isEmpty()) {
+                FileType fileType = FileTypeManager.getInstance().getFileTypeByExtension(ext);
+                return fileType.getIcon();
+            } else {
+                //if the entry doesn't have an extension (old version of the plugin) try to detect it from File Template
+                FileTemplateManager manager = FileTemplateManager.getInstance(project);
+                FileTemplate[] templates = manager.getTemplates(FileTemplateManager.DEFAULT_TEMPLATES_CATEGORY);
+
+                FileTemplate matched = null;
+                for (FileTemplate t : templates) {
+                    if (t.getName().equals(entry.getFileTemplateName())) {
+                        matched = t;
+                        break;
+                    }
+                }
+
+                if (matched != null) {
+                    String templateExt = matched.getExtension();
+                    if (!templateExt.isEmpty()) {
+                        FileType fileType = FileTypeManager.getInstance().getFileTypeByExtension(templateExt);
+                        if (fileType.getIcon() != null) {
+                            return fileType.getIcon();
+                        }
+                    }
+                }
+
+                //fallback to Text icon if nothing matched
+                return AllIcons.FileTypes.Text;
+            }
+        }
+    }
+
+    private void updateDetailsPanel(@Nullable Object userObject) {
+        detailsPanel.removeAll();
+        if (userObject == null) {
+            JBLabel label = new JBLabel("Select an item to see its settings", SwingConstants.CENTER);
+            label.setForeground(JBColor.GRAY);
+            detailsPanel.add(label, BorderLayout.CENTER);
+        } else {
+            FormBuilder formBuilder = FormBuilder.createFormBuilder();
+
+            String name;
+            Icon icon;
+
+            if (userObject instanceof StructureTemplate template) {
+                name = template.getName();
+                icon = IconUtils.getIconByPath(template.getIconPath());
+
+                JBLabel nameLabel = new JBLabel(name, icon, SwingConstants.LEFT);
+                nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
+                formBuilder.addComponent(nameLabel);
+                formBuilder.addVerticalGap(10);
+
+                formBuilder.addLabeledComponent("Icon path:", new JBLabel(template.getIconPath() != null ? template.getIconPath() : "None"));
+            } else if (userObject instanceof StructureEntry entry) {
+                name = entry.getName();
+                icon = getIconForEntry(entry);
+
+                JBLabel nameLabel = new JBLabel(name, icon, SwingConstants.LEFT);
+                nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
+                formBuilder.addComponent(nameLabel);
+                formBuilder.addVerticalGap(10);
+
+                if (entry.getType() == StructureEntryType.FILE) {
+                    String templateName = entry.getFileTemplateName();
+                    String extension = entry.getExtension();
+
+                    JBLabel templateValue = new JBLabel(templateName != null && !templateName.isEmpty() ? templateName : "None");
+                    JBLabel extensionValue = new JBLabel(extension != null && !extension.isEmpty() ? extension : "None");
+
+                    formBuilder.addLabeledComponent("File Template:", templateValue);
+                    formBuilder.addLabeledComponent("Extension:", extensionValue);
+
+                    JButton changeButton = new JButton("Change File Template…");
+                    changeButton.addActionListener(e -> {
+                        FileTemplate newTemplate = chooseFileTemplateName();
+                        if (newTemplate != null) {
+                            entry.setFileTemplateName(newTemplate.getName());
+                            entry.setExtension(newTemplate.getExtension());
+
+                            DefaultMutableTreeNode selectedNode = getSelectedNode();
+                            if (selectedNode != null) {
+                                treeModel.nodeChanged(selectedNode);
+                            } else {
+                                treeModel.reload();
+                            }
+                            updateDetailsPanel(entry);
+                        }
+                    });
+                    formBuilder.addComponent(changeButton);
+
+                    addCustomVariablesSection(formBuilder, entry);
+                } else {
+                    formBuilder.addComponent(new JBLabel("No additional settings for this item."));
+                }
+            }
+
+            JPanel settingsPanel = formBuilder.getPanel();
+            detailsPanel.add(settingsPanel, BorderLayout.NORTH);
+        }
+        detailsPanel.revalidate();
+        detailsPanel.repaint();
+    }
+
+    private void addCustomVariablesSection(FormBuilder formBuilder, StructureEntry entry) {
+        formBuilder.addVerticalGap(10);
+        formBuilder.addSeparator();
+        formBuilder.addVerticalGap(10);
+        formBuilder.addComponent(new JBLabel("Custom Variables:"));
+        formBuilder.addVerticalGap(5);
+
+        for (java.util.Map.Entry<String, String> varEntry : entry.getCustomVariables().entrySet()) {
+            String key = varEntry.getKey();
+            String value = varEntry.getValue();
+
+            JTextField nameField = new JTextField(key);
+            JTextField valueField = new JTextField(value);
+            JButton removeButton = new JButton(AllIcons.General.Remove);
+            removeButton.setToolTipText("Remove variable");
+
+            JPanel row = new JPanel(new BorderLayout(5, 0));
+            JPanel fields = new JPanel(new GridLayout(1, 2, 5, 0));
+            fields.add(nameField);
+            fields.add(valueField);
+            row.add(fields, BorderLayout.CENTER);
+            row.add(removeButton, BorderLayout.EAST);
+            formBuilder.addComponent(row);
+
+            nameField.addFocusListener(new java.awt.event.FocusAdapter() {
+                @Override
+                public void focusLost(java.awt.event.FocusEvent e) {
+                    String newKey = nameField.getText().trim();
+                    if (!newKey.isEmpty() && !newKey.equals(key)) {
+                        String val = entry.getCustomVariables().remove(key);
+                        entry.getCustomVariables().put(newKey, val);
+                        updateDetailsPanel(entry);
+                    }
+                }
+            });
+
+            valueField.addFocusListener(new java.awt.event.FocusAdapter() {
+                @Override
+                public void focusLost(java.awt.event.FocusEvent e) {
+                    entry.getCustomVariables().put(key, valueField.getText());
+                }
+            });
+
+            removeButton.addActionListener(e -> {
+                entry.getCustomVariables().remove(key);
+                updateDetailsPanel(entry);
+            });
+        }
+
+        JButton addButton = new JButton("Add Variable", AllIcons.General.Add);
+        addButton.addActionListener(e -> {
+            String newKey = "VAR_" + (entry.getCustomVariables().size() + 1);
+            entry.getCustomVariables().put(newKey, "value");
+            updateDetailsPanel(entry);
+        });
+        formBuilder.addComponent(addButton);
     }
 
     private void reloadTree(TreeNode treeNode, boolean collapseAll) {
