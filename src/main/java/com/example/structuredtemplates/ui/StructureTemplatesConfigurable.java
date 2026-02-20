@@ -82,12 +82,23 @@ public class StructureTemplatesConfigurable implements SearchableConfigurable {
     public @Nullable JComponent createComponent() {
         mainPanel = new JPanel(new BorderLayout());
 
-        mainPanel.add(createToolBar(), BorderLayout.NORTH);
+        JPanel toolbarPanel = createToolBar();
+        JPanel treePanel = new JPanel(new BorderLayout());
+        treePanel.add(toolbarPanel, BorderLayout.NORTH);
+        treePanel.add(createTree(), BorderLayout.CENTER);
+
+        JPanel detailsHeader = new JPanel();
+        detailsHeader.setBorder(JBUI.Borders.customLine(JBColor.border(), 0, 0, 1, 0));
+        detailsHeader.setPreferredSize(new Dimension(0, toolbarPanel.getPreferredSize().height));
+
+        JPanel detailsPanelWrapper = new JPanel(new BorderLayout());
+        detailsPanelWrapper.add(detailsHeader, BorderLayout.NORTH);
+        detailsPanelWrapper.add(createDetailsPanel(), BorderLayout.CENTER);
 
         JBSplitter splitter = new JBSplitter(false, 0.75f);
         splitter.setHonorComponentsMinimumSize(false);
-        splitter.setFirstComponent(createTree());
-        splitter.setSecondComponent(createDetailsPanel());
+        splitter.setFirstComponent(treePanel);
+        splitter.setSecondComponent(detailsPanelWrapper);
 
         mainPanel.add(splitter, BorderLayout.CENTER);
 
